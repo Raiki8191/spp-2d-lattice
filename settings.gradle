@@ -1,0 +1,3 @@
+rootProject.name = 'spp-2d-lattice'
+
+include('app')
