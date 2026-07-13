@@ -19,7 +19,7 @@ dependencies {
 }
 
 application {
-    mainClass = 'spp.App'
+    mainClass = 'spp.ShortestPathPercolation'
 }
 
 tasks.named('test') {
