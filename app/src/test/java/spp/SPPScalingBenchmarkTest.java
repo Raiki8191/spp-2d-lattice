@@ -19,6 +19,15 @@ class SPPScalingBenchmarkTest {
         assertPlan(plan32, 32, 2_097_152L, List.of(1, 2, 1024));
     }
 
+    @Test
+    void largePlansRemainBoundedAtL64() {
+        SPPSweepPlan plan48 = SPPScalingBenchmark.createPlan(48, temporaryDirectory);
+        SPPSweepPlan plan64 = SPPScalingBenchmark.createPlan(64, temporaryDirectory);
+
+        assertPlan(plan48, 48, 10_616_832L, List.of(1, 2, 2304));
+        assertPlan(plan64, 64, 33_554_432L, List.of(1, 2, 4096));
+    }
+
     private static void assertPlan(
             SPPSweepPlan plan, int L, long maxSteps, List<Integer> budgets) {
         assertEquals(3, plan.runs());

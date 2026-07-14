@@ -13,7 +13,8 @@ import java.util.List;
 /** Runs the bounded L=24,32 scaling benchmark without changing simulation semantics. */
 public final class SPPScalingBenchmark {
     public static final String TIMING_FILE_NAME = "execution_times.csv";
-    private static final int[] LATTICE_SIZES = {24, 32};
+    private static final int[] DEFAULT_LATTICE_SIZES = {24, 32};
+    private static final int[] LARGE_LATTICE_SIZES = {48, 64};
     private static final int[] FINITE_BUDGETS = {1, 2};
     private static final int RUNS = 3;
     private static final long BASE_SEED = 42L;
@@ -24,12 +25,25 @@ public final class SPPScalingBenchmark {
         return run(Path.of("out", "scaling-benchmark"), output);
     }
 
+    public static Path runLargeDefault(PrintStream output) throws IOException {
+        return runLarge(Path.of("out", "scaling-benchmark-large"), output);
+    }
+
     public static Path run(Path outputDirectory, PrintStream output) throws IOException {
+        return runSizes(outputDirectory, output, DEFAULT_LATTICE_SIZES);
+    }
+
+    public static Path runLarge(Path outputDirectory, PrintStream output) throws IOException {
+        return runSizes(outputDirectory, output, LARGE_LATTICE_SIZES);
+    }
+
+    private static Path runSizes(
+            Path outputDirectory, PrintStream output, int[] latticeSizes) throws IOException {
         if (outputDirectory == null || output == null) {
             throw new IllegalArgumentException("outputDirectory and output must not be null");
         }
         List<SPPSweepPlan> plans = new ArrayList<>();
-        for (int latticeSize : LATTICE_SIZES) {
+        for (int latticeSize : latticeSizes) {
             plans.add(createPlan(latticeSize, outputDirectory));
         }
 

@@ -17,9 +17,13 @@ public final class ShortestPathPercolation {
             SPPScalingBenchmark.runDefault(System.out);
             return;
         }
+        if (args.length == 1 && "--scaling-benchmark-large".equals(args[0])) {
+            SPPScalingBenchmark.runLargeDefault(System.out);
+            return;
+        }
         if (args.length != 0) {
             throw new IllegalArgumentException(
-                    "supported arguments: --pilot, --scaling-benchmark");
+                    "supported arguments: --pilot, --scaling-benchmark, --scaling-benchmark-large");
         }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }
