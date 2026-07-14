@@ -19,6 +19,7 @@ class SPPConfigTest {
         assertEquals(10, config.runs());
         assertEquals(1_000, config.maxSteps());
         assertEquals(25, config.measurementInterval());
+        assertEquals(MeasurementMode.STEP_INTERVAL, config.measurementMode());
         assertEquals(BoundaryCondition.OPEN, config.boundaryCondition());
         assertEquals(12345L, config.baseSeed());
         assertEquals(OUTPUT_DIRECTORY, config.outputDirectory());
@@ -52,6 +53,41 @@ class SPPConfigTest {
     void rejectsInvalidMeasurementInterval() {
         assertThrows(IllegalArgumentException.class,
                 () -> config(2, 1, 1, 0, 0, BoundaryCondition.OPEN, OUTPUT_DIRECTORY));
+    }
+
+    @Test
+    void createsAcceptedRequestConfiguration() {
+        SPPConfig config =
+                new SPPConfig(
+                        16,
+                        8,
+                        10,
+                        1_000,
+                        25,
+                        MeasurementMode.ACCEPTED_REQUEST,
+                        BoundaryCondition.OPEN,
+                        12345L,
+                        OUTPUT_DIRECTORY);
+
+        assertEquals(MeasurementMode.ACCEPTED_REQUEST, config.measurementMode());
+        assertEquals(25, config.measurementInterval());
+    }
+
+    @Test
+    void rejectsNullMeasurementMode() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new SPPConfig(
+                                2,
+                                1,
+                                1,
+                                0,
+                                1,
+                                null,
+                                BoundaryCondition.OPEN,
+                                12345L,
+                                OUTPUT_DIRECTORY));
     }
 
     @Test

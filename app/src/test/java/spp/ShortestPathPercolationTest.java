@@ -29,6 +29,18 @@ class ShortestPathPercolationTest {
     }
 
     @Test
+    void smokeSweepPlanUsesOnlySmallAcceptedRequestConditions() {
+        SPPSweepPlan plan = ShortestPathPercolation.createSmokeSweepPlan();
+
+        assertEquals(6, plan.conditions().size());
+        assertEquals(MeasurementMode.ACCEPTED_REQUEST, plan.measurementMode());
+        assertEquals(2, plan.runs());
+        assertEquals(20, plan.maxSteps());
+        assertEquals(42L, plan.baseSeed());
+        assertEquals(Path.of("out", "sweep-smoke"), plan.outputDirectory());
+    }
+
+    @Test
     void runsSmallConfigurationAndPrintsCompletionSummary() throws IOException {
         SPPConfig config =
                 new SPPConfig(

@@ -9,6 +9,7 @@ public record SPPConfig(
         int runs,
         long maxSteps,
         long measurementInterval,
+        MeasurementMode measurementMode,
         BoundaryCondition boundaryCondition,
         long baseSeed,
         Path outputDirectory) {
@@ -30,6 +31,9 @@ public record SPPConfig(
         }
         if (measurementInterval < 1) {
             throw new IllegalArgumentException("measurementInterval must be at least 1");
+        }
+        if (measurementMode == null) {
+            throw new IllegalArgumentException("measurementMode must not be null");
         }
         if (boundaryCondition == null) {
             throw new IllegalArgumentException("boundaryCondition must not be null");
@@ -56,5 +60,27 @@ public record SPPConfig(
         if (maxSteps > 0 && vertexCount < 2) {
             throw new IllegalArgumentException("maxSteps > 0 requires at least two vertices");
         }
+    }
+
+    /** Backward-compatible configuration using STEP_INTERVAL measurements. */
+    public SPPConfig(
+            int L,
+            int C,
+            int runs,
+            long maxSteps,
+            long measurementInterval,
+            BoundaryCondition boundaryCondition,
+            long baseSeed,
+            Path outputDirectory) {
+        this(
+                L,
+                C,
+                runs,
+                maxSteps,
+                measurementInterval,
+                MeasurementMode.STEP_INTERVAL,
+                boundaryCondition,
+                baseSeed,
+                outputDirectory);
     }
 }

@@ -5,7 +5,7 @@ import java.nio.file.Path;
 import java.util.Random;
 import java.util.random.RandomGenerator;
 
-/** Runs a configured batch sequentially and writes STEP_INTERVAL measurements to one CSV file. */
+/** Runs a configured batch sequentially and writes configured measurements to one CSV file. */
 public final class SPPExperimentRunner {
     private static final String RESULT_FILE_NAME = "results.csv";
 
@@ -72,8 +72,8 @@ public final class SPPExperimentRunner {
         long lastMeasuredStep = 0L;
 
         while (simulator.getStep() < config.maxSteps() && lattice.remainingEdgeCount() > 0) {
-            simulator.step();
-            if (simulator.getStep() % config.measurementInterval() == 0) {
+            SPPStepResult stepResult = simulator.step();
+            if (shouldMeasure(stepResult)) {
                 writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
                 lastMeasuredStep = simulator.getStep();
             }
@@ -82,6 +82,13 @@ public final class SPPExperimentRunner {
         if (simulator.getStep() != lastMeasuredStep) {
             writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
         }
+    }
+
+    private boolean shouldMeasure(SPPStepResult stepResult) {
+        return switch (config.measurementMode()) {
+            case STEP_INTERVAL -> stepResult.step() % config.measurementInterval() == 0;
+            case ACCEPTED_REQUEST -> stepResult.accepted();
+        };
     }
 
     private void writeMeasurement(

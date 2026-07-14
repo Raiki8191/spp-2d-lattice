@@ -4,12 +4,26 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Path;
 
-/** Application entry point for a small, deterministic SPP experiment. */
+/** Application entry point for a small, deterministic SPP parameter sweep. */
 public final class ShortestPathPercolation {
     private ShortestPathPercolation() {}
 
     public static void main(String[] args) throws IOException {
-        run(createDefaultConfig(), System.out);
+        new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
+    }
+
+    public static SPPSweepPlan createSmokeSweepPlan() {
+        return new SPPSweepPlan(
+                new int[] {4, 6},
+                new int[] {1, 2},
+                true,
+                2,
+                20,
+                5,
+                MeasurementMode.ACCEPTED_REQUEST,
+                BoundaryCondition.OPEN,
+                42L,
+                Path.of("out", "sweep-smoke"));
     }
 
     public static SPPConfig createDefaultConfig() {
