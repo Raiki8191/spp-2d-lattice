@@ -9,6 +9,13 @@ public final class ShortestPathPercolation {
     private ShortestPathPercolation() {}
 
     public static void main(String[] args) throws IOException {
+        if (args.length == 1 && "--pilot".equals(args[0])) {
+            SPPPilot.runDefault(System.out);
+            return;
+        }
+        if (args.length != 0) {
+            throw new IllegalArgumentException("supported argument: --pilot");
+        }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }
 

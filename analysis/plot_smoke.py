@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 os.environ.setdefault(
@@ -19,30 +20,48 @@ from analysis.io import load_sweep
 from analysis.validation import validate_sweep
 
 
+@dataclass(frozen=True)
+class PlotSpec:
+    x_column: str
+    y_column: str
+    filename: str
+    x_label: str
+    y_label: str
+    title: str
+    marker: str | None
+    drawstyle: str
+
+
 PLOTS = (
-    (
+    PlotSpec(
         "removed_edge_fraction",
         "largest_cluster_fraction",
         "largest_cluster_fraction_vs_removed_edge_fraction.png",
         "Removed edge fraction p",
         "Largest cluster fraction P",
         "Largest cluster fraction vs removed edge fraction",
+        "o",
+        "default",
     ),
-    (
+    PlotSpec(
         "removed_edge_fraction",
         "mean_cluster_size",
         "mean_cluster_size_vs_removed_edge_fraction.png",
         "Removed edge fraction p",
         "Mean finite-cluster size S",
         "Mean finite-cluster size vs removed edge fraction",
+        "o",
+        "default",
     ),
-    (
+    PlotSpec(
         "step",
         "largest_cluster_fraction",
         "largest_cluster_fraction_vs_step.png",
         "Processed requests t",
         "Largest cluster fraction P",
         "Largest cluster fraction vs processed requests",
+        None,
+        "steps-post",
     ),
 )
 
@@ -54,27 +73,46 @@ def create_plots(manifest_path: str | Path) -> list[Path]:
     output_directory.mkdir(parents=True, exist_ok=True)
 
     generated: list[Path] = []
-    for x_column, y_column, filename, x_label, y_label, title in PLOTS:
-        figure, axes = plt.subplots(figsize=(10, 6))
-        for (condition_index, run), group in results.groupby(
-            ["condition_index", "run"], sort=True
-        ):
-            first = group.iloc[0]
-            label = (
-                f"L={int(first['L'])}, C={int(first['C'])}, "
-                f"{first['budget_mode']}, run={int(run)}"
-            )
-            axes.plot(group[x_column], group[y_column], marker="o", markersize=3, label=label)
-        axes.set_title(title)
-        axes.set_xlabel(x_label)
-        axes.set_ylabel(y_label)
-        axes.grid(True, alpha=0.3)
-        axes.legend(fontsize="small", ncol=2)
-        figure.tight_layout()
-        output_path = output_directory / filename
-        figure.savefig(output_path, dpi=150)
-        plt.close(figure)
-        generated.append(output_path)
+    for lattice_size in sorted(results["L"].unique()):
+        lattice_results = results.loc[results["L"] == lattice_size]
+        condition_indices = sorted(lattice_results["condition_index"].unique())
+        colors = plt.get_cmap("tab10")
+        condition_colors = {
+            condition_index: colors(index % 10)
+            for index, condition_index in enumerate(condition_indices)
+        }
+        for spec in PLOTS:
+            figure, axes = plt.subplots(figsize=(12, 7))
+            for (condition_index, run), group in lattice_results.groupby(
+                ["condition_index", "run"], sort=True
+            ):
+                first = group.iloc[0]
+                budget_label = (
+                    "UNBOUNDED"
+                    if first["budget_mode"] == "UNBOUNDED"
+                    else f"C={int(first['C'])}"
+                )
+                axes.plot(
+                    group[spec.x_column],
+                    group[spec.y_column],
+                    color=condition_colors[int(condition_index)],
+                    linestyle=("-", "--", ":", "-.")[int(run) % 4],
+                    alpha=0.8,
+                    marker=spec.marker,
+                    markersize=3,
+                    drawstyle=spec.drawstyle,
+                    label=f"{budget_label}, run={int(run)}",
+                )
+            axes.set_title(f"L={int(lattice_size)}: {spec.title}")
+            axes.set_xlabel(spec.x_label)
+            axes.set_ylabel(spec.y_label)
+            axes.grid(True, alpha=0.3)
+            axes.legend(fontsize="x-small", ncol=3)
+            figure.tight_layout()
+            output_path = output_directory / f"L={int(lattice_size)}_{spec.filename}"
+            figure.savefig(output_path, dpi=150)
+            plt.close(figure)
+            generated.append(output_path)
 
     # ACCEPTED_REQUEST runs generally have different p samples. Deliberately do not
     # average by row number; common-grid interpolation/binning belongs to a later stage.

@@ -6,6 +6,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /** Writes the machine-readable manifest for a completed parameter sweep. */
 public final class SweepManifestWriter {
@@ -20,8 +23,17 @@ public final class SweepManifestWriter {
         if (plan == null) {
             throw new IllegalArgumentException("plan must not be null");
         }
-        Path manifest = plan.outputDirectory().resolve(FILE_NAME);
-        Files.createDirectories(plan.outputDirectory());
+        return writePlans(plan.outputDirectory(), List.of(plan));
+    }
+
+    /** Writes one manifest for several per-L plans with globally unique condition indices. */
+    public static Path writePlans(Path outputDirectory, List<SPPSweepPlan> plans)
+            throws IOException {
+        if (outputDirectory == null || plans == null || plans.isEmpty()) {
+            throw new IllegalArgumentException("outputDirectory and non-empty plans are required");
+        }
+        Path manifest = outputDirectory.resolve(FILE_NAME);
+        Files.createDirectories(outputDirectory);
         try (BufferedWriter writer =
                 Files.newBufferedWriter(
                         manifest,
@@ -31,19 +43,38 @@ public final class SweepManifestWriter {
                         StandardOpenOption.WRITE)) {
             writer.write(HEADER);
             writer.newLine();
-            for (SPPSweepPlan.Condition condition : plan.conditions()) {
-                writeCondition(writer, plan, condition);
+            int conditionIndex = 0;
+            Set<String> conditionKeys = new HashSet<>();
+            for (SPPSweepPlan plan : plans) {
+                if (plan == null || !plan.outputDirectory().equals(outputDirectory)) {
+                    throw new IllegalArgumentException(
+                            "every plan must use the supplied outputDirectory");
+                }
+                for (SPPSweepPlan.Condition condition : plan.conditions()) {
+                    String conditionKey = condition.L() + ":" + condition.C();
+                    if (!conditionKeys.add(conditionKey)) {
+                        throw new IllegalArgumentException(
+                                "duplicate sweep condition: L="
+                                        + condition.L()
+                                        + ", C="
+                                        + condition.C());
+                    }
+                    writeCondition(writer, plan, condition, conditionIndex++);
+                }
             }
         }
         return manifest;
     }
 
     private static void writeCondition(
-            BufferedWriter writer, SPPSweepPlan plan, SPPSweepPlan.Condition condition)
+            BufferedWriter writer,
+            SPPSweepPlan plan,
+            SPPSweepPlan.Condition condition,
+            int conditionIndex)
             throws IOException {
         String relativeResultPath =
                 "L=" + condition.L() + "/C=" + condition.C() + "/results.csv";
-        writer.write(Integer.toString(condition.conditionIndex()));
+        writer.write(Integer.toString(conditionIndex));
         writer.write(',' + Integer.toString(condition.L()));
         writer.write(',' + Integer.toString(condition.C()));
         writer.write(',' + condition.budgetMode().name());
