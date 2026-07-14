@@ -91,6 +91,40 @@ class SPPConfigTest {
     }
 
     @Test
+    void rejectsNullStopModeAndIncompatibleMeasurementMode() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new SPPConfig(
+                                2,
+                                1,
+                                1,
+                                10,
+                                1,
+                                MeasurementMode.ACCEPTED_REQUEST,
+                                null,
+                                false,
+                                BoundaryCondition.OPEN,
+                                42L,
+                                OUTPUT_DIRECTORY));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        new SPPConfig(
+                                2,
+                                1,
+                                1,
+                                10,
+                                1,
+                                MeasurementMode.STEP_INTERVAL,
+                                RunStopMode.TRANSITION_WINDOW_COMPLETE,
+                                false,
+                                BoundaryCondition.OPEN,
+                                42L,
+                                OUTPUT_DIRECTORY));
+    }
+
+    @Test
     void rejectsNullBoundaryCondition() {
         assertThrows(IllegalArgumentException.class,
                 () -> config(2, 1, 1, 0, 1, null, OUTPUT_DIRECTORY));

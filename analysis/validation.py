@@ -36,44 +36,70 @@ def validate_sweep(
     )
 
     metadata = manifest.set_index("condition_index", drop=False)
-    for row in results.itertuples(index=False):
-        condition_index = int(row.condition_index)
-        if condition_index not in metadata.index:
-            _fail(row, "condition is not present in manifest")
-        condition = metadata.loc[condition_index]
-        if int(row.L) != int(condition.L) or int(row.C) != int(condition.C):
-            _fail(row, "results L/C does not match manifest")
-        if not 0 <= int(row.run) < int(condition.runs):
-            _fail(row, f"run must be in [0, {int(condition.runs)})")
-        if int(row.accepted_requests) + int(row.rejected_requests) != int(row.step):
-            _fail(row, "accepted_requests + rejected_requests != step")
+    condition_ids = results["condition_index"]
+    expected_L = condition_ids.map(metadata["L"])
+    _fail_first(results, expected_L.isna(), "condition is not present in manifest")
+    expected_C = condition_ids.map(metadata["C"])
+    _fail_first(
+        results,
+        (results["L"] != expected_L) | (results["C"] != expected_C),
+        "results L/C does not match manifest",
+    )
+    expected_runs = condition_ids.map(metadata["runs"])
+    _fail_first(
+        results,
+        (results["run"] < 0) | (results["run"] >= expected_runs),
+        "run is outside the manifest range",
+    )
+    _fail_first(
+        results,
+        results["accepted_requests"] + results["rejected_requests"] != results["step"],
+        "accepted_requests + rejected_requests != step",
+    )
 
-        initial_edges = 2 * int(row.L) * (int(row.L) - 1)
-        if int(row.removed_edges) + int(row.remaining_edges) != initial_edges:
-            _fail(row, "removed_edges + remaining_edges != 2L(L-1)")
-        expected_removed_fraction = (
-            0.0 if initial_edges == 0 else int(row.removed_edges) / initial_edges
-        )
-        if not np.isclose(
-            float(row.removed_edge_fraction),
+    initial_edges = 2 * results["L"] * (results["L"] - 1)
+    _fail_first(
+        results,
+        results["removed_edges"] + results["remaining_edges"] != initial_edges,
+        "removed_edges + remaining_edges != 2L(L-1)",
+    )
+    expected_removed_fraction = np.divide(
+        results["removed_edges"].to_numpy(float),
+        initial_edges.to_numpy(float),
+        out=np.zeros(len(results), dtype=float),
+        where=initial_edges.to_numpy() != 0,
+    )
+    _fail_first(
+        results,
+        ~np.isclose(
+            results["removed_edge_fraction"].to_numpy(float),
             expected_removed_fraction,
             rtol=rtol,
             atol=atol,
-        ):
-            _fail(row, "removed_edge_fraction does not match removed_edges / M0")
-
-        expected_largest_fraction = int(row.largest_cluster_size) / (int(row.L) ** 2)
-        if not np.isclose(
-            float(row.largest_cluster_fraction),
-            expected_largest_fraction,
+        ),
+        "removed_edge_fraction does not match removed_edges / M0",
+    )
+    expected_largest_fraction = results["largest_cluster_size"] / (results["L"] ** 2)
+    _fail_first(
+        results,
+        ~np.isclose(
+            results["largest_cluster_fraction"].to_numpy(float),
+            expected_largest_fraction.to_numpy(float),
             rtol=rtol,
             atol=atol,
-        ):
-            _fail(row, "largest_cluster_fraction does not match largest_cluster_size / L^2")
-        if not 0.0 <= float(row.removed_edge_fraction) <= 1.0:
-            _fail(row, "removed_edge_fraction is outside [0, 1]")
-        if not 0.0 <= float(row.largest_cluster_fraction) <= 1.0:
-            _fail(row, "largest_cluster_fraction is outside [0, 1]")
+        ),
+        "largest_cluster_fraction does not match largest_cluster_size / L^2",
+    )
+    _fail_first(
+        results,
+        ~results["removed_edge_fraction"].between(0.0, 1.0),
+        "removed_edge_fraction is outside [0, 1]",
+    )
+    _fail_first(
+        results,
+        ~results["largest_cluster_fraction"].between(0.0, 1.0),
+        "largest_cluster_fraction is outside [0, 1]",
+    )
 
     grouped = results.groupby(["condition_index", "run"], sort=False, dropna=False)
     for (condition_index, run), group in grouped:
@@ -126,3 +152,9 @@ def _fail(row: object, message: str) -> None:
         f"{message} at condition={int(value('condition_index'))}, "
         f"run={int(value('run'))}, step={int(value('step'))}"
     )
+
+
+def _fail_first(results: pd.DataFrame, mask: object, message: str) -> None:
+    bad = np.flatnonzero(np.asarray(mask, dtype=bool))
+    if bad.size:
+        _fail(results.iloc[int(bad[0])], message)

@@ -2,6 +2,7 @@ package spp;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Random;
 import java.util.random.RandomGenerator;
@@ -10,10 +11,12 @@ import java.util.random.RandomGenerator;
 public final class SPPExperimentRunner {
     private static final String RESULT_FILE_NAME = "results.csv";
     private static final String EDGE_TRACE_FILE_NAME = "edge_removals.csv";
+    private static final String RUN_SUMMARY_FILE_NAME = "run_summary.csv";
 
     private final SPPConfig config;
     private final Path outputPath;
     private final Path edgeTracePath;
+    private final Path runSummaryPath;
 
     public SPPExperimentRunner(SPPConfig config) {
         if (config == null) {
@@ -22,6 +25,7 @@ public final class SPPExperimentRunner {
         this.config = config;
         this.outputPath = resultPath(config);
         this.edgeTracePath = edgeTracePath(config);
+        this.runSummaryPath = runSummaryPath(config);
     }
 
     /**
@@ -32,10 +36,16 @@ public final class SPPExperimentRunner {
      */
     public Path run() throws IOException {
         ClusterAnalyzer clusterAnalyzer = new ClusterAnalyzer();
+        if (!config.edgeTraceEnabled()) {
+            Files.deleteIfExists(edgeTracePath);
+        }
+        EdgeRemovalTraceWriter traceWriter =
+                config.edgeTraceEnabled() ? EdgeRemovalTraceWriter.create(edgeTracePath) : null;
         try (CsvWriter csvWriter = CsvWriter.create(outputPath);
-                EdgeRemovalTraceWriter traceWriter = EdgeRemovalTraceWriter.create(edgeTracePath)) {
+                EdgeRemovalTraceWriter closeableTraceWriter = traceWriter;
+                RunSummaryWriter summaryWriter = RunSummaryWriter.create(runSummaryPath)) {
             for (int run = 0; run < config.runs(); run++) {
-                executeRun(run, clusterAnalyzer, csvWriter, traceWriter);
+                executeRun(run, clusterAnalyzer, csvWriter, traceWriter, summaryWriter);
             }
         } catch (UncheckedIOException error) {
             throw error.getCause();
@@ -49,6 +59,10 @@ public final class SPPExperimentRunner {
 
     public Path edgeTracePath() {
         return edgeTracePath;
+    }
+
+    public Path runSummaryPath() {
+        return runSummaryPath;
     }
 
     public static Path resultPath(SPPConfig config) {
@@ -71,12 +85,24 @@ public final class SPPExperimentRunner {
                 .resolve(EDGE_TRACE_FILE_NAME);
     }
 
+    public static Path runSummaryPath(SPPConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("config must not be null");
+        }
+        return config.outputDirectory()
+                .resolve("L=" + config.L())
+                .resolve("C=" + config.C())
+                .resolve(RUN_SUMMARY_FILE_NAME);
+    }
+
     private void executeRun(
             int run,
             ClusterAnalyzer clusterAnalyzer,
             CsvWriter csvWriter,
-            EdgeRemovalTraceWriter traceWriter)
+            EdgeRemovalTraceWriter traceWriter,
+            RunSummaryWriter summaryWriter)
             throws IOException {
+        long startedAt = System.nanoTime();
         SquareLattice lattice = new SquareLattice(config.L());
         long runSeed = SeedUtils.runSeed(config.baseSeed(), run);
 
@@ -85,6 +111,15 @@ public final class SPPExperimentRunner {
         if (lattice.vertexCount() < 2) {
             ClusterStats initialStats = clusterAnalyzer.analyze(lattice);
             csvWriter.write(initialResult(run, runSeed, lattice, initialStats));
+            writeSummary(
+                    summaryWriter,
+                    run,
+                    runSeed,
+                    lattice,
+                    0L,
+                    initialStats,
+                    TerminationReason.ALL_EDGES_REMOVED,
+                    startedAt);
             return;
         }
 
@@ -96,22 +131,47 @@ public final class SPPExperimentRunner {
                         config.C(),
                         pairRandom,
                         pathRandom,
-                        traceWriter.observerForRun(run, runSeed));
+                        traceWriter == null
+                                ? EdgeRemovalObserver.NONE
+                                : traceWriter.observerForRun(run, runSeed));
 
-        writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
+        ClusterStats finalStats =
+                writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
         long lastMeasuredStep = 0L;
+        boolean transitionWindowComplete = false;
 
         while (simulator.getStep() < config.maxSteps() && lattice.remainingEdgeCount() > 0) {
             SPPStepResult stepResult = simulator.step();
             if (shouldMeasure(stepResult)) {
-                writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
+                finalStats =
+                        writeMeasurement(
+                                run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
                 lastMeasuredStep = simulator.getStep();
+                transitionWindowComplete =
+                        config.stopMode() == RunStopMode.TRANSITION_WINDOW_COMPLETE
+                                && stepResult.accepted()
+                                && largestClusterFraction(finalStats, lattice) <= 1.0 / config.L();
+                if (transitionWindowComplete) {
+                    break;
+                }
             }
         }
 
         if (simulator.getStep() != lastMeasuredStep) {
-            writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
+            finalStats =
+                    writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
         }
+        TerminationReason terminationReason =
+                terminationReason(lattice, transitionWindowComplete);
+        writeSummary(
+                summaryWriter,
+                run,
+                runSeed,
+                lattice,
+                simulator.getStep(),
+                finalStats,
+                terminationReason,
+                startedAt);
     }
 
     private boolean shouldMeasure(SPPStepResult stepResult) {
@@ -121,7 +181,7 @@ public final class SPPExperimentRunner {
         };
     }
 
-    private void writeMeasurement(
+    private ClusterStats writeMeasurement(
             int run,
             long runSeed,
             SquareLattice lattice,
@@ -139,6 +199,45 @@ public final class SPPExperimentRunner {
                         lattice,
                         simulator,
                         clusterStats));
+        return clusterStats;
+    }
+
+    private TerminationReason terminationReason(
+            SquareLattice lattice, boolean transitionWindowComplete) {
+        if (lattice.remainingEdgeCount() == 0) {
+            return TerminationReason.ALL_EDGES_REMOVED;
+        }
+        if (transitionWindowComplete) {
+            return TerminationReason.TRANSITION_WINDOW_COMPLETE;
+        }
+        return TerminationReason.MAX_STEPS;
+    }
+
+    private void writeSummary(
+            RunSummaryWriter summaryWriter,
+            int run,
+            long runSeed,
+            SquareLattice lattice,
+            long finalStep,
+            ClusterStats finalStats,
+            TerminationReason terminationReason,
+            long startedAt)
+            throws IOException {
+        summaryWriter.write(
+                run,
+                runSeed,
+                finalStep,
+                lattice.removedEdgeCount(),
+                lattice.initialEdgeCount() == 0
+                        ? 0.0
+                        : (double) lattice.removedEdgeCount() / lattice.initialEdgeCount(),
+                largestClusterFraction(finalStats, lattice),
+                terminationReason,
+                (System.nanoTime() - startedAt) / 1_000_000L);
+    }
+
+    private double largestClusterFraction(ClusterStats stats, SquareLattice lattice) {
+        return (double) stats.largestClusterSize() / lattice.vertexCount();
     }
 
     private SPPResult initialResult(

@@ -10,6 +10,8 @@ public record SPPConfig(
         long maxSteps,
         long measurementInterval,
         MeasurementMode measurementMode,
+        RunStopMode stopMode,
+        boolean edgeTraceEnabled,
         BoundaryCondition boundaryCondition,
         long baseSeed,
         Path outputDirectory) {
@@ -34,6 +36,14 @@ public record SPPConfig(
         }
         if (measurementMode == null) {
             throw new IllegalArgumentException("measurementMode must not be null");
+        }
+        if (stopMode == null) {
+            throw new IllegalArgumentException("stopMode must not be null");
+        }
+        if (stopMode == RunStopMode.TRANSITION_WINDOW_COMPLETE
+                && measurementMode != MeasurementMode.ACCEPTED_REQUEST) {
+            throw new IllegalArgumentException(
+                    "TRANSITION_WINDOW_COMPLETE requires ACCEPTED_REQUEST measurements");
         }
         if (boundaryCondition == null) {
             throw new IllegalArgumentException("boundaryCondition must not be null");
@@ -62,6 +72,31 @@ public record SPPConfig(
         }
     }
 
+    /** Backward-compatible configuration with the original stop mode and edge tracing. */
+    public SPPConfig(
+            int L,
+            int C,
+            int runs,
+            long maxSteps,
+            long measurementInterval,
+            MeasurementMode measurementMode,
+            BoundaryCondition boundaryCondition,
+            long baseSeed,
+            Path outputDirectory) {
+        this(
+                L,
+                C,
+                runs,
+                maxSteps,
+                measurementInterval,
+                measurementMode,
+                RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                true,
+                boundaryCondition,
+                baseSeed,
+                outputDirectory);
+    }
+
     /** Backward-compatible configuration using STEP_INTERVAL measurements. */
     public SPPConfig(
             int L,
@@ -79,6 +114,8 @@ public record SPPConfig(
                 maxSteps,
                 measurementInterval,
                 MeasurementMode.STEP_INTERVAL,
+                RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                true,
                 boundaryCondition,
                 baseSeed,
                 outputDirectory);

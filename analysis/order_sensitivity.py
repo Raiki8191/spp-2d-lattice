@@ -69,7 +69,9 @@ def reorder_within_requests(traces: pd.DataFrame, order_mode: str) -> pd.DataFra
     return pd.concat(frames, ignore_index=True).loc[:, traces.columns]
 
 
-def analyze_order_sensitivity(manifest_path: str | Path) -> list[Path]:
+def analyze_order_sensitivity(
+    manifest_path: str | Path, output_directory: str | Path | None = None
+) -> list[Path]:
     started = time.perf_counter()
     manifest, results = load_sweep(manifest_path)
     validation = validate_sweep(manifest, results)
@@ -97,7 +99,11 @@ def analyze_order_sensitivity(manifest_path: str | Path) -> list[Path]:
     comparison = _comparison(conventional_all, event_summary)
     _assert_c1_invariance(comparison)
 
-    root = Path(manifest.attrs["manifest_path"]).parent / "order-sensitivity"
+    root = (
+        Path(output_directory)
+        if output_directory is not None
+        else Path(manifest.attrs["manifest_path"]).parent / "order-sensitivity"
+    )
     figure_directory = root / "figures"
     figure_directory.mkdir(parents=True, exist_ok=True)
     conventional_all.to_csv(
@@ -307,8 +313,9 @@ def _plot_comparisons(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifest", type=Path)
+    parser.add_argument("--output", type=Path)
     arguments = parser.parse_args()
-    analyze_order_sensitivity(arguments.manifest)
+    analyze_order_sensitivity(arguments.manifest, arguments.output)
 
 
 if __name__ == "__main__":

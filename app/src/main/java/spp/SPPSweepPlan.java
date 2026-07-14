@@ -14,6 +14,8 @@ public record SPPSweepPlan(
         long maxSteps,
         long measurementInterval,
         MeasurementMode measurementMode,
+        RunStopMode stopMode,
+        boolean edgeTraceEnabled,
         BoundaryCondition boundaryCondition,
         long baseSeed,
         Path outputDirectory) {
@@ -41,8 +43,12 @@ public record SPPSweepPlan(
         if (measurementInterval < 1) {
             throw new IllegalArgumentException("measurementInterval must be at least 1");
         }
-        if (measurementMode == null || boundaryCondition == null || outputDirectory == null) {
-            throw new IllegalArgumentException("measurementMode, boundaryCondition, and outputDirectory must not be null");
+        if (measurementMode == null
+                || stopMode == null
+                || boundaryCondition == null
+                || outputDirectory == null) {
+            throw new IllegalArgumentException(
+                    "measurementMode, stopMode, boundaryCondition, and outputDirectory must not be null");
         }
         if (finiteBudgets.length == 0 && !includeUnboundedBudget) {
             throw new IllegalArgumentException("the sweep must contain at least one budget");
@@ -61,10 +67,39 @@ public record SPPSweepPlan(
                     maxSteps,
                     measurementInterval,
                     measurementMode,
+                    stopMode,
+                    edgeTraceEnabled,
                     boundaryCondition,
                     baseSeed,
                     outputDirectory);
         }
+    }
+
+    /** Backward-compatible sweep using the original stop mode and edge tracing. */
+    public SPPSweepPlan(
+            int[] latticeSizes,
+            int[] finiteBudgets,
+            boolean includeUnboundedBudget,
+            int runs,
+            long maxSteps,
+            long measurementInterval,
+            MeasurementMode measurementMode,
+            BoundaryCondition boundaryCondition,
+            long baseSeed,
+            Path outputDirectory) {
+        this(
+                latticeSizes,
+                finiteBudgets,
+                includeUnboundedBudget,
+                runs,
+                maxSteps,
+                measurementInterval,
+                measurementMode,
+                RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                true,
+                boundaryCondition,
+                baseSeed,
+                outputDirectory);
     }
 
     @Override
@@ -111,6 +146,8 @@ public record SPPSweepPlan(
                 maxSteps,
                 measurementInterval,
                 measurementMode,
+                stopMode,
+                edgeTraceEnabled,
                 boundaryCondition,
                 baseSeed,
                 outputDirectory);

@@ -150,6 +150,7 @@ class SPPExperimentRunnerTest {
         assertThrows(IllegalArgumentException.class, () -> new SPPExperimentRunner(null));
         assertThrows(IllegalArgumentException.class, () -> SPPExperimentRunner.resultPath(null));
         assertThrows(IllegalArgumentException.class, () -> SPPExperimentRunner.edgeTracePath(null));
+        assertThrows(IllegalArgumentException.class, () -> SPPExperimentRunner.runSummaryPath(null));
     }
 
     private static Path run(SPPConfig config) throws IOException {

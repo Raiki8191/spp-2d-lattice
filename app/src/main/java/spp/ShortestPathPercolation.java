@@ -21,9 +21,23 @@ public final class ShortestPathPercolation {
             SPPScalingBenchmark.runLargeDefault(System.out);
             return;
         }
+        if (args.length == 1 && "--scaling-v1".equals(args[0])) {
+            SPPScalingV1.runDefault(System.out);
+            return;
+        }
+        if (args.length == 1 && "--scaling-v1-smoke".equals(args[0])) {
+            SPPScalingV1.runSmoke(System.out);
+            return;
+        }
+        if (args.length == 1 && "--scaling-v1-order-check".equals(args[0])) {
+            SPPScalingV1.runOrderCheckDefault(System.out);
+            return;
+        }
         if (args.length != 0) {
             throw new IllegalArgumentException(
-                    "supported arguments: --pilot, --scaling-benchmark, --scaling-benchmark-large");
+                    "supported arguments: --pilot, --scaling-benchmark, "
+                            + "--scaling-benchmark-large, --scaling-v1, "
+                            + "--scaling-v1-smoke, --scaling-v1-order-check");
         }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }

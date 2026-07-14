@@ -20,7 +20,7 @@ MANIFEST_COLUMNS = (
     "result_path",
 )
 
-OPTIONAL_MANIFEST_COLUMNS = ("edge_trace_path",)
+OPTIONAL_MANIFEST_COLUMNS = ("stop_mode", "edge_trace_path")
 
 RESULT_COLUMNS = (
     "run",
@@ -123,9 +123,10 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
                 )
             resolved_trace_paths.append(str(trace_path))
 
-    selected_columns = MANIFEST_COLUMNS + (
-        OPTIONAL_MANIFEST_COLUMNS if has_edge_trace else ()
+    present_optional_columns = tuple(
+        column for column in OPTIONAL_MANIFEST_COLUMNS if column in manifest.columns
     )
+    selected_columns = MANIFEST_COLUMNS + present_optional_columns
     manifest = manifest.loc[:, selected_columns].copy()
     manifest["result_path"] = resolved_paths
     if has_edge_trace:
