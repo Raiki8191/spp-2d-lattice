@@ -20,6 +20,8 @@ MANIFEST_COLUMNS = (
     "result_path",
 )
 
+OPTIONAL_MANIFEST_COLUMNS = ("edge_trace_path",)
+
 RESULT_COLUMNS = (
     "run",
     "L",
@@ -93,6 +95,8 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
         )
 
     resolved_paths: list[str] = []
+    resolved_trace_paths: list[str] = []
+    has_edge_trace = "edge_trace_path" in manifest.columns
     for row in manifest.itertuples(index=False):
         raw_path = Path(str(row.result_path))
         result_path = (
@@ -105,8 +109,27 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
             )
         resolved_paths.append(str(result_path))
 
-    manifest = manifest.loc[:, MANIFEST_COLUMNS].copy()
+        if has_edge_trace:
+            raw_trace_path = Path(str(row.edge_trace_path))
+            trace_path = (
+                raw_trace_path
+                if raw_trace_path.is_absolute()
+                else manifest_path.parent / raw_trace_path
+            ).resolve()
+            if not trace_path.is_file():
+                raise FileNotFoundError(
+                    "edge trace CSV does not exist for "
+                    f"condition={row.condition_index}: {trace_path}"
+                )
+            resolved_trace_paths.append(str(trace_path))
+
+    selected_columns = MANIFEST_COLUMNS + (
+        OPTIONAL_MANIFEST_COLUMNS if has_edge_trace else ()
+    )
+    manifest = manifest.loc[:, selected_columns].copy()
     manifest["result_path"] = resolved_paths
+    if has_edge_trace:
+        manifest["edge_trace_path"] = resolved_trace_paths
     manifest.attrs["manifest_path"] = str(manifest_path)
     return manifest
 
@@ -179,4 +202,3 @@ def _convert_integers(
         if numeric.isna().any() or (numeric % 1 != 0).any():
             raise ValueError(f"{label} column {column!r} must be integer-valued")
         frame[column] = numeric.astype("int64")
-

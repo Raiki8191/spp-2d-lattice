@@ -10,6 +10,7 @@ public final class SPPSimulator {
     private final ShortestPathFinder shortestPathFinder;
     private final RandomGenerator pairRandom;
     private final RandomGenerator pathRandom;
+    private final EdgeRemovalObserver edgeRemovalObserver;
     private long step;
     private long acceptedRequests;
     private long rejectedRequests;
@@ -19,6 +20,15 @@ public final class SPPSimulator {
             int budget,
             RandomGenerator pairRandom,
             RandomGenerator pathRandom) {
+        this(lattice, budget, pairRandom, pathRandom, EdgeRemovalObserver.NONE);
+    }
+
+    public SPPSimulator(
+            SquareLattice lattice,
+            int budget,
+            RandomGenerator pairRandom,
+            RandomGenerator pathRandom,
+            EdgeRemovalObserver edgeRemovalObserver) {
         if (lattice == null) {
             throw new IllegalArgumentException("lattice must not be null");
         }
@@ -31,6 +41,9 @@ public final class SPPSimulator {
         if (pathRandom == null) {
             throw new IllegalArgumentException("pathRandom must not be null");
         }
+        if (edgeRemovalObserver == null) {
+            throw new IllegalArgumentException("edgeRemovalObserver must not be null");
+        }
         if (lattice.vertexCount() < 2) {
             throw new IllegalArgumentException("request processing requires at least two vertices");
         }
@@ -40,6 +53,7 @@ public final class SPPSimulator {
         this.shortestPathFinder = new ShortestPathFinder(lattice);
         this.pairRandom = pairRandom;
         this.pathRandom = pathRandom;
+        this.edgeRemovalObserver = edgeRemovalObserver;
     }
 
     /** Selects an ordered pair of distinct vertices uniformly and processes its request. */
@@ -107,6 +121,7 @@ public final class SPPSimulator {
 
         step = nextStep;
         acceptedRequests++;
+        edgeRemovalObserver.edgesRemoved(step, source, target, shortestPath);
         return new SPPStepResult(
                 step,
                 source,

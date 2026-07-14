@@ -1,6 +1,7 @@
 package spp;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.Random;
 import java.util.random.RandomGenerator;
@@ -8,9 +9,11 @@ import java.util.random.RandomGenerator;
 /** Runs a configured batch sequentially and writes configured measurements to one CSV file. */
 public final class SPPExperimentRunner {
     private static final String RESULT_FILE_NAME = "results.csv";
+    private static final String EDGE_TRACE_FILE_NAME = "edge_removals.csv";
 
     private final SPPConfig config;
     private final Path outputPath;
+    private final Path edgeTracePath;
 
     public SPPExperimentRunner(SPPConfig config) {
         if (config == null) {
@@ -18,6 +21,7 @@ public final class SPPExperimentRunner {
         }
         this.config = config;
         this.outputPath = resultPath(config);
+        this.edgeTracePath = edgeTracePath(config);
     }
 
     /**
@@ -28,16 +32,23 @@ public final class SPPExperimentRunner {
      */
     public Path run() throws IOException {
         ClusterAnalyzer clusterAnalyzer = new ClusterAnalyzer();
-        try (CsvWriter csvWriter = CsvWriter.create(outputPath)) {
+        try (CsvWriter csvWriter = CsvWriter.create(outputPath);
+                EdgeRemovalTraceWriter traceWriter = EdgeRemovalTraceWriter.create(edgeTracePath)) {
             for (int run = 0; run < config.runs(); run++) {
-                executeRun(run, clusterAnalyzer, csvWriter);
+                executeRun(run, clusterAnalyzer, csvWriter, traceWriter);
             }
+        } catch (UncheckedIOException error) {
+            throw error.getCause();
         }
         return outputPath;
     }
 
     public Path outputPath() {
         return outputPath;
+    }
+
+    public Path edgeTracePath() {
+        return edgeTracePath;
     }
 
     public static Path resultPath(SPPConfig config) {
@@ -50,7 +61,21 @@ public final class SPPExperimentRunner {
                 .resolve(RESULT_FILE_NAME);
     }
 
-    private void executeRun(int run, ClusterAnalyzer clusterAnalyzer, CsvWriter csvWriter)
+    public static Path edgeTracePath(SPPConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("config must not be null");
+        }
+        return config.outputDirectory()
+                .resolve("L=" + config.L())
+                .resolve("C=" + config.C())
+                .resolve(EDGE_TRACE_FILE_NAME);
+    }
+
+    private void executeRun(
+            int run,
+            ClusterAnalyzer clusterAnalyzer,
+            CsvWriter csvWriter,
+            EdgeRemovalTraceWriter traceWriter)
             throws IOException {
         SquareLattice lattice = new SquareLattice(config.L());
         long runSeed = SeedUtils.runSeed(config.baseSeed(), run);
@@ -66,7 +91,12 @@ public final class SPPExperimentRunner {
         RandomGenerator pairRandom = new Random(SeedUtils.pairSeed(runSeed));
         RandomGenerator pathRandom = new Random(SeedUtils.pathSeed(runSeed));
         SPPSimulator simulator =
-                new SPPSimulator(lattice, config.C(), pairRandom, pathRandom);
+                new SPPSimulator(
+                        lattice,
+                        config.C(),
+                        pairRandom,
+                        pathRandom,
+                        traceWriter.observerForRun(run, runSeed));
 
         writeMeasurement(run, runSeed, lattice, simulator, clusterAnalyzer, csvWriter);
         long lastMeasuredStep = 0L;
