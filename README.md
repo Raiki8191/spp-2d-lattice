@@ -73,6 +73,13 @@ scaling-v1 本計算とFSS解析:
 python -m analysis.plot_scaling app/out/scaling-v1/manifest.csv
 ```
 
+scaling-v2前段のL=96/128・各5 run停止延長benchmark:
+
+```powershell
+.\gradlew.bat run --args="--scaling-v2-benchmark"
+python -m analysis.scaling_v2_benchmark app/out/scaling-v2-benchmark/manifest.csv
+```
+
 経路内辺順序の副解析用データは次で生成できます。
 
 ```powershell

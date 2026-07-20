@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -20,7 +21,11 @@ MANIFEST_COLUMNS = (
     "result_path",
 )
 
-OPTIONAL_MANIFEST_COLUMNS = ("stop_mode", "edge_trace_path")
+OPTIONAL_MANIFEST_COLUMNS = (
+    "stop_mode",
+    "transition_threshold_multiplier",
+    "edge_trace_path",
+)
 
 RESULT_COLUMNS = (
     "run",
@@ -78,6 +83,17 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
     manifest = pd.read_csv(manifest_path, encoding="utf-8")
     _require_columns(manifest, MANIFEST_COLUMNS, "manifest")
     _convert_integers(manifest, _MANIFEST_INTEGER_COLUMNS, "manifest")
+    if "transition_threshold_multiplier" in manifest.columns:
+        multiplier = pd.to_numeric(
+            manifest["transition_threshold_multiplier"], errors="coerce"
+        )
+        if multiplier.isna().any() or (~multiplier.map(math.isfinite)).any():
+            raise ValueError("manifest transition_threshold_multiplier must be numeric")
+        if (~multiplier.map(lambda value: float(value) > 0.0)).any():
+            raise ValueError(
+                "manifest transition_threshold_multiplier must be finite and positive"
+            )
+        manifest["transition_threshold_multiplier"] = multiplier.astype(float)
 
     if manifest["condition_index"].duplicated().any():
         duplicate = int(

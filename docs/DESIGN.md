@@ -73,9 +73,9 @@ S = sum(s^2 n_s) / sum(s n_s)
 `RunStopMode` は次の2方式を持つ。
 
 - `MAX_STEPS_OR_ALL_EDGES`: `maxSteps` 到達または全辺削除で停止する。
-- `TRANSITION_WINDOW_COMPLETE`: 上記に加え、accepted要求後の測定で `P <= 1/L` になった時点で停止する。
+- `TRANSITION_WINDOW_COMPLETE`: 上記に加え、accepted要求後の測定で `P <= transitionThresholdMultiplier/L` になった時点で停止する。倍率は有限かつ正でなければならず、既定値は `1.0` である。
 
-後者は転移幅の下側閾値まで観測した時点でrunを終了し、大規模計算で転移後の長いrejected系列を省く。終了理由は `MAX_STEPS`、`ALL_EDGES_REMOVED`、`TRANSITION_WINDOW_COMPLETE` を区別し、`run_summary.csv` に最終step、最終 `p`、最終 `P`、run seed、実行時間とともに記録する。
+既定値では転移幅の下側閾値 `P <= 1/L` まで観測してrunを終了し、大規模計算で転移後の長いrejected系列を省く。停止位置の延長診断では、同じ乱数系列のまま倍率を `0.5` として `P <= 1/(2L)` まで記録できる。終了理由は `MAX_STEPS`、`ALL_EDGES_REMOVED`、`TRANSITION_WINDOW_COMPLETE` を区別し、`run_summary.csv` に最終step、最終 `p`、最終 `P`、run seed、実行時間とともに記録する。実際の倍率は `manifest.csv` の `transition_threshold_multiplier` に記録する。
 
 ## 7. CSV出力
 

@@ -150,7 +150,8 @@ public final class SPPExperimentRunner {
                 transitionWindowComplete =
                         config.stopMode() == RunStopMode.TRANSITION_WINDOW_COMPLETE
                                 && stepResult.accepted()
-                                && largestClusterFraction(finalStats, lattice) <= 1.0 / config.L();
+                                && largestClusterFraction(finalStats, lattice)
+                                        <= config.transitionThresholdMultiplier() / config.L();
                 if (transitionWindowComplete) {
                     break;
                 }

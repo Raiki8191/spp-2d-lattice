@@ -20,6 +20,7 @@ class SPPConfigTest {
         assertEquals(1_000, config.maxSteps());
         assertEquals(25, config.measurementInterval());
         assertEquals(MeasurementMode.STEP_INTERVAL, config.measurementMode());
+        assertEquals(1.0, config.transitionThresholdMultiplier());
         assertEquals(BoundaryCondition.OPEN, config.boundaryCondition());
         assertEquals(12345L, config.baseSeed());
         assertEquals(OUTPUT_DIRECTORY, config.outputDirectory());
@@ -122,6 +123,29 @@ class SPPConfigTest {
                                 BoundaryCondition.OPEN,
                                 42L,
                                 OUTPUT_DIRECTORY));
+    }
+
+    @Test
+    void rejectsInvalidTransitionThresholdMultiplier() {
+        for (double value : new double[] {0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY,
+                Double.NEGATIVE_INFINITY}) {
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () ->
+                            new SPPConfig(
+                                    4,
+                                    1,
+                                    1,
+                                    100,
+                                    1,
+                                    MeasurementMode.ACCEPTED_REQUEST,
+                                    RunStopMode.TRANSITION_WINDOW_COMPLETE,
+                                    value,
+                                    false,
+                                    BoundaryCondition.OPEN,
+                                    42L,
+                                    OUTPUT_DIRECTORY));
+        }
     }
 
     @Test

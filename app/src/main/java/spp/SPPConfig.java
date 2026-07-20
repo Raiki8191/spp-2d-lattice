@@ -11,6 +11,7 @@ public record SPPConfig(
         long measurementInterval,
         MeasurementMode measurementMode,
         RunStopMode stopMode,
+        double transitionThresholdMultiplier,
         boolean edgeTraceEnabled,
         BoundaryCondition boundaryCondition,
         long baseSeed,
@@ -39,6 +40,11 @@ public record SPPConfig(
         }
         if (stopMode == null) {
             throw new IllegalArgumentException("stopMode must not be null");
+        }
+        if (!Double.isFinite(transitionThresholdMultiplier)
+                || transitionThresholdMultiplier <= 0.0) {
+            throw new IllegalArgumentException(
+                    "transitionThresholdMultiplier must be finite and positive");
         }
         if (stopMode == RunStopMode.TRANSITION_WINDOW_COMPLETE
                 && measurementMode != MeasurementMode.ACCEPTED_REQUEST) {
@@ -72,6 +78,34 @@ public record SPPConfig(
         }
     }
 
+    /** Backward-compatible full configuration using the original 1/L transition threshold. */
+    public SPPConfig(
+            int L,
+            int C,
+            int runs,
+            long maxSteps,
+            long measurementInterval,
+            MeasurementMode measurementMode,
+            RunStopMode stopMode,
+            boolean edgeTraceEnabled,
+            BoundaryCondition boundaryCondition,
+            long baseSeed,
+            Path outputDirectory) {
+        this(
+                L,
+                C,
+                runs,
+                maxSteps,
+                measurementInterval,
+                measurementMode,
+                stopMode,
+                1.0,
+                edgeTraceEnabled,
+                boundaryCondition,
+                baseSeed,
+                outputDirectory);
+    }
+
     /** Backward-compatible configuration with the original stop mode and edge tracing. */
     public SPPConfig(
             int L,
@@ -91,6 +125,7 @@ public record SPPConfig(
                 measurementInterval,
                 measurementMode,
                 RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                1.0,
                 true,
                 boundaryCondition,
                 baseSeed,
@@ -115,6 +150,7 @@ public record SPPConfig(
                 measurementInterval,
                 MeasurementMode.STEP_INTERVAL,
                 RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                1.0,
                 true,
                 boundaryCondition,
                 baseSeed,

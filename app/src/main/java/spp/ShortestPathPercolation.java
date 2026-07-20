@@ -33,11 +33,20 @@ public final class ShortestPathPercolation {
             SPPScalingV1.runOrderCheckDefault(System.out);
             return;
         }
+        if (args.length == 1 && "--scaling-v2-benchmark".equals(args[0])) {
+            SPPScalingV2Benchmark.runDefault(System.out);
+            return;
+        }
+        if (args.length == 1 && "--scaling-v2-benchmark-smoke".equals(args[0])) {
+            SPPScalingV2Benchmark.runSmoke(System.out);
+            return;
+        }
         if (args.length != 0) {
             throw new IllegalArgumentException(
                     "supported arguments: --pilot, --scaling-benchmark, "
                             + "--scaling-benchmark-large, --scaling-v1, "
-                            + "--scaling-v1-smoke, --scaling-v1-order-check");
+                            + "--scaling-v1-smoke, --scaling-v1-order-check, "
+                            + "--scaling-v2-benchmark, --scaling-v2-benchmark-smoke");
         }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }

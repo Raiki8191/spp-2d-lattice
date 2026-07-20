@@ -15,6 +15,7 @@ public record SPPSweepPlan(
         long measurementInterval,
         MeasurementMode measurementMode,
         RunStopMode stopMode,
+        double transitionThresholdMultiplier,
         boolean edgeTraceEnabled,
         BoundaryCondition boundaryCondition,
         long baseSeed,
@@ -50,6 +51,11 @@ public record SPPSweepPlan(
             throw new IllegalArgumentException(
                     "measurementMode, stopMode, boundaryCondition, and outputDirectory must not be null");
         }
+        if (!Double.isFinite(transitionThresholdMultiplier)
+                || transitionThresholdMultiplier <= 0.0) {
+            throw new IllegalArgumentException(
+                    "transitionThresholdMultiplier must be finite and positive");
+        }
         if (finiteBudgets.length == 0 && !includeUnboundedBudget) {
             throw new IllegalArgumentException("the sweep must contain at least one budget");
         }
@@ -68,11 +74,42 @@ public record SPPSweepPlan(
                     measurementInterval,
                     measurementMode,
                     stopMode,
+                    transitionThresholdMultiplier,
                     edgeTraceEnabled,
                     boundaryCondition,
                     baseSeed,
                     outputDirectory);
         }
+    }
+
+    /** Backward-compatible full sweep using the original 1/L transition threshold. */
+    public SPPSweepPlan(
+            int[] latticeSizes,
+            int[] finiteBudgets,
+            boolean includeUnboundedBudget,
+            int runs,
+            long maxSteps,
+            long measurementInterval,
+            MeasurementMode measurementMode,
+            RunStopMode stopMode,
+            boolean edgeTraceEnabled,
+            BoundaryCondition boundaryCondition,
+            long baseSeed,
+            Path outputDirectory) {
+        this(
+                latticeSizes,
+                finiteBudgets,
+                includeUnboundedBudget,
+                runs,
+                maxSteps,
+                measurementInterval,
+                measurementMode,
+                stopMode,
+                1.0,
+                edgeTraceEnabled,
+                boundaryCondition,
+                baseSeed,
+                outputDirectory);
     }
 
     /** Backward-compatible sweep using the original stop mode and edge tracing. */
@@ -96,6 +133,7 @@ public record SPPSweepPlan(
                 measurementInterval,
                 measurementMode,
                 RunStopMode.MAX_STEPS_OR_ALL_EDGES,
+                1.0,
                 true,
                 boundaryCondition,
                 baseSeed,
@@ -147,6 +185,7 @@ public record SPPSweepPlan(
                 measurementInterval,
                 measurementMode,
                 stopMode,
+                transitionThresholdMultiplier,
                 edgeTraceEnabled,
                 boundaryCondition,
                 baseSeed,

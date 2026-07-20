@@ -60,6 +60,28 @@ class SPPTransitionStopTest {
     }
 
     @Test
+    void halfThresholdExtendsTheSameRunWithoutChangingItsPrefix() throws IOException {
+        SPPConfig original = transitionConfig(temporaryDirectory.resolve("original"), 1.0);
+        SPPConfig extended = transitionConfig(temporaryDirectory.resolve("extended"), 0.5);
+        SPPExperimentRunner originalRunner = new SPPExperimentRunner(original);
+        SPPExperimentRunner extendedRunner = new SPPExperimentRunner(extended);
+
+        List<String> originalLines =
+                Files.readAllLines(originalRunner.run(), StandardCharsets.UTF_8);
+        List<String> extendedLines =
+                Files.readAllLines(extendedRunner.run(), StandardCharsets.UTF_8);
+
+        assertEquals(originalLines, extendedLines.subList(0, originalLines.size()));
+        String[] originalFinal = originalLines.get(originalLines.size() - 1).split(",", -1);
+        String[] extendedFinal = extendedLines.get(extendedLines.size() - 1).split(",", -1);
+        assertTrue(Double.parseDouble(originalFinal[8]) <= 1.0 / original.L());
+        assertTrue(Double.parseDouble(extendedFinal[8]) <= 0.5 / extended.L());
+        assertTrue(extendedLines.size() > originalLines.size());
+        assertEquals(originalFinal[13], extendedFinal[13]);
+        assertEquals(CsvWriter.HEADER, extendedLines.get(0));
+    }
+
+    @Test
     void maxStepsTerminationIsRecorded() throws IOException {
         SPPConfig config =
                 new SPPConfig(
@@ -117,6 +139,22 @@ class SPPTransitionStopTest {
                 MeasurementMode.ACCEPTED_REQUEST,
                 stopMode,
                 trace,
+                BoundaryCondition.OPEN,
+                42L,
+                output);
+    }
+
+    private static SPPConfig transitionConfig(Path output, double multiplier) {
+        return new SPPConfig(
+                8,
+                2,
+                1,
+                100_000,
+                1,
+                MeasurementMode.ACCEPTED_REQUEST,
+                RunStopMode.TRANSITION_WINDOW_COMPLETE,
+                multiplier,
+                false,
                 BoundaryCondition.OPEN,
                 42L,
                 output);

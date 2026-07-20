@@ -14,10 +14,12 @@ import java.util.Set;
 public final class SweepManifestWriter {
     public static final String HEADER =
             "condition_index,L,C,budget_mode,runs,max_steps,measurement_mode,"
-                    + "measurement_interval,base_seed,result_path,stop_mode,edge_trace_path";
+                    + "measurement_interval,base_seed,result_path,stop_mode,"
+                    + "transition_threshold_multiplier,edge_trace_path";
     public static final String HEADER_WITHOUT_EDGE_TRACE =
             "condition_index,L,C,budget_mode,runs,max_steps,measurement_mode,"
-                    + "measurement_interval,base_seed,result_path,stop_mode";
+                    + "measurement_interval,base_seed,result_path,stop_mode,"
+                    + "transition_threshold_multiplier";
     public static final String FILE_NAME = "manifest.csv";
 
     private SweepManifestWriter() {}
@@ -100,6 +102,7 @@ public final class SweepManifestWriter {
         writer.write(',' + Long.toString(plan.baseSeed()));
         writer.write(',' + relativeResultPath);
         writer.write(',' + plan.stopMode().name());
+        writer.write(',' + Double.toString(plan.transitionThresholdMultiplier()));
         if (edgeTraceEnabled) {
             writer.write(',' + relativeEdgeTracePath);
         }
