@@ -10,6 +10,7 @@
 - [解析量と疑似臨界点の定義](docs/ANALYSIS_DEFINITIONS.md)
 - [scaling-v1 の条件・結果](docs/SCALING_V1_RESULTS.md)
 - [scaling-v2 の条件・統合FSS・結果](docs/SCALING_V2_RESULTS.md)
+- [scaling-v3 有限サイズ補正解析](docs/SCALING_V3_RESULTS.md)
 
 ## 環境
 
@@ -88,6 +89,12 @@ scaling-v2 本計算、停止監査、scaling-v1との論理統合解析:
 .\gradlew.bat run --args="--scaling-v2-stop-audit"
 python -m analysis.scaling_v2 stop-audit app/out/scaling-v2-main/manifest.csv app/out/scaling-v2-stop-audit/manifest.csv --output app/out/scaling-v2-stop-audit/analysis
 python -m analysis.scaling_v2 analyze app/out/scaling-v1/manifest.csv app/out/scaling-v2-main/manifest.csv --output app/out/scaling-v2-analysis --bootstrap-samples 5000
+```
+
+確定済みscaling-v2集約値を用いる有限サイズ補正解析（新しいシミュレーションは実行しない）:
+
+```powershell
+python -m analysis.scaling_v3 --source app/out/scaling-v2-analysis --output app/out/scaling-v3-analysis --bootstrap-samples 500
 ```
 
 経路内辺順序の副解析用データは次で生成できます。
