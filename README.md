@@ -1,39 +1,87 @@
-# spp-2d-lattice
+# Shortest-Path Percolation on a 2D Square Lattice
 
-## 卒業研究タイトル（仮）
-二次元正方格子における Shortest-Path Percolation の有限サイズ解析
+二次元正方格子上の Shortest-Path Percolation（SPP）を、Java 21 でシミュレーションし、Python で検証・可視化・有限サイズスケーリング（FSS）解析する独立した研究プロジェクトです。
 
-## 研究目的
-二次元正方格子上の Shortest-Path Percolation (SPP) を対象に、臨界現象と臨界指数の振る舞いを調べる。有限サイズスケーリングを用いて、系サイズ依存性を整理し、解析結果を比較しやすい形でまとめる。
+各要求では異なる2頂点を一様に選び、現在の有効辺上の最短距離が予算 `C` 以下なら、全最短経路から一様に選んだ1本をまとめて削除します。シミュレーションは測定結果、run要約、条件manifest、および必要に応じて辺削除トレースをCSVへ出力します。Python側では入力検証、要求単位・辺単位の疑似臨界事象、転移幅、bootstrap、FSSを扱います。
 
-## 使用予定技術
-- Java
-- Gradle
-- VS Code
-- Python
-- 二次元正方格子モデル
-- Shortest-Path Percolation (SPP)
-- Finite Size Scaling
-- 臨界指数解析
+詳細は次を参照してください。
 
-## ディレクトリ構成
-```
-spp-2d-lattice/
-├── README.md
-├── .gitignore
-├── src/
-│   ├── main/
-│   │   └── java/
-│   └── test/
-│       └── java/
-├── python/
-├── data/
-├── docs/
-└── results/
+- [設計と実装](docs/DESIGN.md)
+- [解析量と疑似臨界点の定義](docs/ANALYSIS_DEFINITIONS.md)
+- [scaling-v1 の条件・結果](docs/SCALING_V1_RESULTS.md)
+
+## 環境
+
+- Java 21
+- Gradle Wrapper
+- Python 3
+- NumPy / pandas / Matplotlib / pytest
+
+Python依存関係は次で導入します。
+
+```powershell
+python -m pip install -r requirements.txt
 ```
 
-## 今後の予定
-1. Gradle プロジェクトの基本構成を作成する。
-2. SPP のシミュレーション実装を Java で整備する。
-3. Python で結果の集計・可視化・有限サイズスケーリング解析を行う。
-4. 実験条件、再現手順、結果を段階的に記録する。
+## 主なディレクトリ
+
+```text
+app/src/main/java/spp/  Javaシミュレーションと実行エントリーポイント
+app/src/test/java/spp/  Javaテスト
+analysis/               Python解析コード
+analysis/tests/         pytest
+docs/                   設計、解析定義、研究記録
+app/out/                実験・解析の生成物（Git管理対象外）
+```
+
+## テスト
+
+リポジトリルートから実行します。
+
+```powershell
+.\gradlew.bat test
+.\gradlew.bat build
+python -m pytest analysis/tests
+```
+
+## 再現用の実行コマンド
+
+小規模な smoke 走査:
+
+```powershell
+.\gradlew.bat run
+python -m analysis.plot_smoke app/out/sweep-smoke/manifest.csv
+```
+
+pilot 走査と解析:
+
+```powershell
+.\gradlew.bat run --args="--pilot"
+python -m analysis.plot_ensemble app/out/sweep-pilot/manifest.csv
+```
+
+scaling-v1 の軽量確認:
+
+```powershell
+.\gradlew.bat run --args="--scaling-v1-smoke"
+```
+
+scaling-v1 本計算とFSS解析:
+
+```powershell
+.\gradlew.bat run --args="--scaling-v1"
+python -m analysis.plot_scaling app/out/scaling-v1/manifest.csv
+```
+
+経路内辺順序の副解析用データは次で生成できます。
+
+```powershell
+.\gradlew.bat run --args="--scaling-v1-order-check"
+python -m analysis.order_sensitivity app/out/scaling-v1-order-check/manifest.csv --output app/out/scaling-v1-order-check
+```
+
+本計算はCPU時間とディスク容量を消費します。既存結果を確認するだけなら再実行は不要です。`app/out/` 以下のCSV・PNGなどは再生成可能な成果物としてGit管理しません。
+
+## プロジェクトの独立性
+
+本リポジトリは先輩リポジトリとは独立したプロジェクトです。先行実装は責務分離などの設計上の参考に限り、ビルド依存関係や実行時依存関係を持ちません。
