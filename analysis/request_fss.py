@@ -25,12 +25,16 @@ EVENT_METRICS = (
     "step",
 )
 BOOTSTRAP_METRICS = (
+    "p_before",
+    "p_after",
     "p_mid",
+    "delta_p_request",
     "delta_P_max",
     "P_before",
     "P_after",
     "S_before",
     "S_after",
+    "path_length",
 )
 BOOTSTRAP_SEED = 20260715
 
@@ -52,6 +56,12 @@ def prepare_request_events(results: pd.DataFrame) -> pd.DataFrame:
         "budget_mode",
         *EVENT_METRICS,
     ]
+    for optional in ("global_condition_id", "source_condition_index", "source_manifest"):
+        if optional in results.columns:
+            events[optional] = events["condition_index"].map(
+                results.drop_duplicates("condition_index").set_index("condition_index")[optional]
+            )
+            columns.append(optional)
     return events.loc[:, columns]
 
 

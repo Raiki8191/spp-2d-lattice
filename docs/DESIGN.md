@@ -144,7 +144,7 @@ gamma/nu = 43/24 ~= 1.79167
 1/nu     = 3/4   = 0.75
 ```
 
-既知指数は仮定して固定するのではなく、SPPデータから得た有効指数との比較対象にする。有限サイズ補正と採用する最小サイズ `L_min` への依存性を必ず確認する。scaling-v1の具体的な手法と結果は [SCALING_V1_RESULTS.md](SCALING_V1_RESULTS.md) に記録する。
+既知指数は仮定して固定するのではなく、SPPデータから得た有効指数との比較対象にする。有限サイズ補正と採用する最小サイズ `L_min` への依存性を必ず確認する。scaling-v1の具体的な手法と結果は [SCALING_V1_RESULTS.md](SCALING_V1_RESULTS.md)、L=96,128を追加した統合解析は [SCALING_V2_RESULTS.md](SCALING_V2_RESULTS.md) に記録する。
 
 ## 11. 検証方針と既知の限界
 

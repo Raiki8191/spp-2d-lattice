@@ -9,6 +9,7 @@
 - [設計と実装](docs/DESIGN.md)
 - [解析量と疑似臨界点の定義](docs/ANALYSIS_DEFINITIONS.md)
 - [scaling-v1 の条件・結果](docs/SCALING_V1_RESULTS.md)
+- [scaling-v2 の条件・統合FSS・結果](docs/SCALING_V2_RESULTS.md)
 
 ## 環境
 
@@ -78,6 +79,15 @@ scaling-v2前段のL=96/128・各5 run停止延長benchmark:
 ```powershell
 .\gradlew.bat run --args="--scaling-v2-benchmark"
 python -m analysis.scaling_v2_benchmark app/out/scaling-v2-benchmark/manifest.csv
+```
+
+scaling-v2 本計算、停止監査、scaling-v1との論理統合解析:
+
+```powershell
+.\gradlew.bat run --args="--scaling-v2-main"
+.\gradlew.bat run --args="--scaling-v2-stop-audit"
+python -m analysis.scaling_v2 stop-audit app/out/scaling-v2-main/manifest.csv app/out/scaling-v2-stop-audit/manifest.csv --output app/out/scaling-v2-stop-audit/analysis
+python -m analysis.scaling_v2 analyze app/out/scaling-v1/manifest.csv app/out/scaling-v2-main/manifest.csv --output app/out/scaling-v2-analysis --bootstrap-samples 5000
 ```
 
 経路内辺順序の副解析用データは次で生成できます。

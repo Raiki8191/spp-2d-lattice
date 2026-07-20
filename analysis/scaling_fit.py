@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 
-L_MIN_VALUES = (8, 12, 16, 24)
+L_MIN_VALUES = (8, 12, 16, 24, 32, 48)
 FIT_SPECS = {
     "P_before": ("P_before_mean", -1),
     "P_after": ("P_after_mean", -1),
@@ -40,7 +40,8 @@ def fit_scaling(
         for observable, (column, exponent_sign) in FIT_SPECS.items():
             for L_min in L_MIN_VALUES:
                 subset = ordered.loc[(ordered["L"] >= L_min) & (ordered[column] > 0)]
-                if len(subset) < 3:
+                # Four points keep AICc defined for the two-parameter log fit.
+                if len(subset) < 4:
                     continue
                 fit_rows.append(
                     _fit_row(
@@ -98,6 +99,15 @@ def _fit_row(
     t_critical = _T_975.get(degrees_freedom, 1.96)
     slope_low = slope - t_critical * slope_standard_error
     slope_high = slope + t_critical * slope_standard_error
+    parameter_count = 2
+    safe_rss = max(residual_sum, np.finfo(float).tiny)
+    aic = len(x) * math.log(safe_rss / len(x)) + 2 * parameter_count
+    aicc = (
+        aic + 2 * parameter_count * (parameter_count + 1) / (len(x) - parameter_count - 1)
+        if len(x) > parameter_count + 1
+        else math.inf
+    )
+    bic = len(x) * math.log(safe_rss / len(x)) + parameter_count * math.log(len(x))
     return {
         "condition_label": condition_label,
         "observable": observable,
@@ -114,6 +124,9 @@ def _fit_row(
         "exponent_ci95_low": min(exponent_sign * slope_low, exponent_sign * slope_high),
         "exponent_ci95_high": max(exponent_sign * slope_low, exponent_sign * slope_high),
         "r_squared": 1.0 - residual_sum / total_sum if total_sum > 0 else 1.0,
+        "rss": residual_sum,
+        "aicc": aicc,
+        "bic": bic,
     }
 
 
