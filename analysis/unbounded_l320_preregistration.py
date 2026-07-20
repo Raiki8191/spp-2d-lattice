@@ -35,7 +35,7 @@ def _predict(model: str, L: float, limit: float, amplitude: float, exponent: flo
     return limit + amplitude * basis
 
 
-def _fit_s_peak(summary: pd.DataFrame) -> pd.DataFrame:
+def _fit_s_peak(summary: pd.DataFrame, target_L: int = TARGET_L) -> pd.DataFrame:
     data = summary.loc[summary.observable == "S_peak"].sort_values("L")
     x, y = data.L.to_numpy(float), data.value.to_numpy(float)
     rows = []
@@ -77,7 +77,7 @@ def _fit_s_peak(summary: pd.DataFrame) -> pd.DataFrame:
             limit, amplitude, exponent = map(float, params)
         else:
             limit, (amplitude, exponent) = 0.0, map(float, params)
-        point = _predict(model, TARGET_L, limit, amplitude, exponent)
+        point = _predict(model, target_L, limit, amplitude, exponent)
         residual_rms = float(np.sqrt(np.mean(residuals ** 2)))
         parameter_vector = np.asarray(params, float)
         steps = np.maximum(np.abs(parameter_vector) * 1e-6, 1e-6)
@@ -85,13 +85,13 @@ def _fit_s_peak(summary: pd.DataFrame) -> pd.DataFrame:
         for index, step in enumerate(steps):
             upper_parameters = parameter_vector.copy(); upper_parameters[index] += step
             lower_parameters = parameter_vector.copy(); lower_parameters[index] -= step
-            gradient.append((float(function(np.asarray([TARGET_L]), *upper_parameters)[0])
-                             - float(function(np.asarray([TARGET_L]), *lower_parameters)[0])) / (2 * step))
+            gradient.append((float(function(np.asarray([target_L]), *upper_parameters)[0])
+                             - float(function(np.asarray([target_L]), *lower_parameters)[0])) / (2 * step))
         prediction_se = float(np.sqrt(max(np.asarray(gradient) @ covariance @ np.asarray(gradient), 0.0)))
         confidence_half = 1.96 * prediction_se
         predictive_half = 1.96 * math.sqrt(prediction_se ** 2 + residual_rms ** 2)
         rows.append({
-            "observable": "S_peak", "model": model, "target_L": TARGET_L,
+            "observable": "S_peak", "model": model, "target_L": target_L,
             "prediction": point, "prediction_ci95_low": point - confidence_half,
             "prediction_ci95_high": point + confidence_half,
             "prediction_interval95_low": point - predictive_half,
