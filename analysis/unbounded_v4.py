@@ -186,9 +186,14 @@ def lmin_fits(summary: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def stop_audit_report() -> pd.DataFrame:
-    benchmark = STAGE_ROOT / "benchmark/manifest.csv"
-    audit = STAGE_ROOT / "stop-audit/manifest.csv"
+def stop_audit_report(
+    *,
+    stage_root: Path = STAGE_ROOT,
+    benchmark_name: str = "benchmark/manifest.csv",
+    audit_name: str = "stop-audit/manifest.csv",
+) -> pd.DataFrame:
+    benchmark = stage_root / benchmark_name
+    audit = stage_root / audit_name
     if not audit.is_file():
         return pd.DataFrame()
     main_manifest = read_manifest(benchmark)

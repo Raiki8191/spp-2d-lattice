@@ -70,6 +70,21 @@ def fit_models(
             float(np.sqrt(np.mean(np.square(fit["residuals"]))))
             if fit.get("converged") else np.nan
         )
+        if fit.get("converged") and name.startswith("finite"):
+            covariance = np.asarray(fit.get("covariance"), float)
+            denominator = math.sqrt(max(covariance[0, 0], 0.0) * max(covariance[2, 2], 0.0))
+            fit["limit_decay_correlation"] = (
+                float(covariance[0, 2] / denominator) if denominator > 0 else np.nan
+            )
+        else:
+            fit["limit_decay_correlation"] = np.nan
+        if fit.get("converged"):
+            n = int(fit["point_count"])
+            k = int(fit["parameter_count"])
+            rss = max(float(fit["rss"]), np.finfo(float).tiny)
+            fit["aic"] = n * math.log(rss / n) + 2 * k
+        else:
+            fit["aic"] = np.nan
         rows.append(_serializable(fit))
     return pd.DataFrame(rows)
 
@@ -198,10 +213,15 @@ def summarize_bootstrap(bootstrap: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def prediction_table(fits: pd.DataFrame, bootstrap: pd.DataFrame) -> pd.DataFrame:
+def prediction_table(
+    fits: pd.DataFrame,
+    bootstrap: pd.DataFrame,
+    *,
+    targets: Iterable[int] = (192, 256, 384, 512),
+) -> pd.DataFrame:
     rows = []
     for fit in fits.to_dict("records"):
-        for target in (192, 256, 384, 512):
+        for target in targets:
             value = predict(fit, target) if fit["converged"] else np.nan
             boot = bootstrap.loc[
                 (bootstrap["observable"] == fit["observable"])

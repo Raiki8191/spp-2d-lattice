@@ -69,6 +69,18 @@ public final class ShortestPathPercolation {
             SPPUnboundedL192.run(SPPUnboundedL192.auditStage(), System.out);
             return;
         }
+        if (args.length == 1 && "--unbounded-l256-benchmark".equals(args[0])) {
+            SPPUnboundedL256.run(SPPUnboundedL256.benchmarkStage(), System.out);
+            return;
+        }
+        if (args.length == 1 && "--unbounded-l256-pilot".equals(args[0])) {
+            SPPUnboundedL256.run(SPPUnboundedL256.pilotStage(), System.out);
+            return;
+        }
+        if (args.length == 1 && "--unbounded-l256-stop-audit".equals(args[0])) {
+            SPPUnboundedL256.run(SPPUnboundedL256.auditStage(), System.out);
+            return;
+        }
         if (args.length != 0) {
             throw new IllegalArgumentException(
                     "supported arguments: --pilot, --scaling-benchmark, "
@@ -78,7 +90,8 @@ public final class ShortestPathPercolation {
                             + "--scaling-v2-main, --scaling-v2-stop-audit, "
                             + "--scaling-v2-main-smoke, --unbounded-l192-benchmark, "
                             + "--unbounded-l192-pilot, --unbounded-l192-main, "
-                            + "--unbounded-l192-stop-audit");
+                            + "--unbounded-l192-stop-audit, --unbounded-l256-benchmark, "
+                            + "--unbounded-l256-pilot, --unbounded-l256-stop-audit");
         }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }

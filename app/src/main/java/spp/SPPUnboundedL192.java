@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Resumable, staged UNBOUNDED L=192 experiment used by the v4 analysis. */
+/** Resumable staged UNBOUNDED experiment engine and the L=192 v4 configuration. */
 public final class SPPUnboundedL192 {
     public static final int L = 192;
     public static final int C = L * L;
@@ -36,12 +36,14 @@ public final class SPPUnboundedL192 {
 
     public record Stage(
             String name,
+            int latticeSize,
             int runs,
             long baseSeed,
             double transitionThresholdMultiplier,
             Path outputDirectory) {
         public Stage {
-            if (name == null || name.isBlank() || runs < 1 || outputDirectory == null) {
+            if (name == null || name.isBlank() || latticeSize < 2 || runs < 1
+                    || outputDirectory == null) {
                 throw new IllegalArgumentException("stage name, positive runs and output are required");
             }
             if (!Double.isFinite(transitionThresholdMultiplier)
@@ -49,26 +51,40 @@ public final class SPPUnboundedL192 {
                 throw new IllegalArgumentException("transition threshold must be positive");
             }
         }
+
+        /** Backward-compatible constructor for the original L=192 stages and tests. */
+        public Stage(
+                String name,
+                int runs,
+                long baseSeed,
+                double transitionThresholdMultiplier,
+                Path outputDirectory) {
+            this(name, L, runs, baseSeed, transitionThresholdMultiplier, outputDirectory);
+        }
+
+        public int budget() {
+            return Math.multiplyExact(latticeSize, latticeSize);
+        }
     }
 
     public static Stage benchmarkStage() {
-        return new Stage("unbounded-l192-benchmark", BENCHMARK_RUNS,
+        return new Stage("unbounded-l192-benchmark", L, BENCHMARK_RUNS,
                 BENCHMARK_BASE_SEED, 1.0, ROOT.resolve("benchmark"));
     }
 
     public static Stage pilotStage() {
-        return new Stage("unbounded-l192-pilot", PILOT_RUNS,
+        return new Stage("unbounded-l192-pilot", L, PILOT_RUNS,
                 PILOT_BASE_SEED, 1.0, ROOT.resolve("pilot"));
     }
 
     public static Stage mainStage() {
-        return new Stage("unbounded-l192-main", MAIN_RUNS,
+        return new Stage("unbounded-l192-main", L, MAIN_RUNS,
                 MAIN_BASE_SEED, 1.0, ROOT.resolve("main"));
     }
 
     /** A separate, shorter-seed audit continued to P <= 0.5/L. */
     public static Stage auditStage() {
-        return new Stage("unbounded-l192-stop-audit", BENCHMARK_RUNS,
+        return new Stage("unbounded-l192-stop-audit", L, BENCHMARK_RUNS,
                 BENCHMARK_BASE_SEED, 0.5, ROOT.resolve("stop-audit"));
     }
 
@@ -113,7 +129,8 @@ public final class SPPUnboundedL192 {
         Instant started = Instant.now();
         long startedNanos = System.nanoTime();
         SPPConfig config = new SPPConfig(
-                L, C, 1, SPPPilot.maxStepsForL(L), 1,
+                stage.latticeSize(), stage.budget(), 1,
+                SPPPilot.maxStepsForL(stage.latticeSize()), 1,
                 MeasurementMode.ACCEPTED_REQUEST,
                 RunStopMode.TRANSITION_WINDOW_COMPLETE,
                 stage.transitionThresholdMultiplier(), false,
@@ -137,7 +154,9 @@ public final class SPPUnboundedL192 {
 
     static RunRecord validateShard(Stage stage, int run) throws IOException {
         Path shard = shardDirectory(stage, run);
-        Path condition = shard.resolve("L=" + L).resolve("C=" + C);
+        int latticeSize = stage.latticeSize();
+        int budget = stage.budget();
+        Path condition = shard.resolve("L=" + latticeSize).resolve("C=" + budget);
         Path results = condition.resolve("results.csv");
         Path summary = condition.resolve("run_summary.csv");
         Path metadata = shard.resolve("run_metadata.csv");
@@ -164,10 +183,12 @@ public final class SPPUnboundedL192 {
             long remaining = Long.parseLong(fields[5]);
             long accepted = Long.parseLong(fields[11]);
             long rejected = Long.parseLong(fields[12]);
-            if (!"0".equals(fields[0]) || Integer.parseInt(fields[1]) != L
-                    || Integer.parseInt(fields[2]) != C || Long.parseLong(fields[13]) != expectedSeed
+            if (!"0".equals(fields[0]) || Integer.parseInt(fields[1]) != latticeSize
+                    || Integer.parseInt(fields[2]) != budget
+                    || Long.parseLong(fields[13]) != expectedSeed
                     || step <= previousStep || removed < previousRemoved || accepted < previousAccepted
-                    || accepted + rejected != step || removed + remaining != 2L * L * (L - 1L)) {
+                    || accepted + rejected != step
+                    || removed + remaining != 2L * latticeSize * (latticeSize - 1L)) {
                 throw new IOException("results invariant violation at row=" + index + ": " + results);
             }
             previousStep = step;
@@ -192,7 +213,10 @@ public final class SPPUnboundedL192 {
     }
 
     private static void aggregate(Stage stage) throws IOException {
-        Path condition = stage.outputDirectory().resolve("L=" + L).resolve("C=" + C);
+        int latticeSize = stage.latticeSize();
+        int budget = stage.budget();
+        Path condition = stage.outputDirectory()
+                .resolve("L=" + latticeSize).resolve("C=" + budget);
         Files.createDirectories(condition);
         try (BufferedWriter results = writer(condition.resolve("results.csv"));
                 BufferedWriter summaries = writer(condition.resolve("run_summary.csv"));
@@ -203,7 +227,7 @@ public final class SPPUnboundedL192 {
             for (int run = 0; run < stage.runs(); run++) {
                 validateShard(stage, run);
                 Path shard = shardDirectory(stage, run);
-                Path shardCondition = shard.resolve("L=" + L).resolve("C=" + C);
+                Path shardCondition = shard.resolve("L=" + latticeSize).resolve("C=" + budget);
                 copyDataRows(shardCondition.resolve("results.csv"), results, run);
                 copyDataRows(shardCondition.resolve("run_summary.csv"), summaries, run);
                 copyDataRows(shard.resolve("run_metadata.csv"), metadata, run);
@@ -217,9 +241,13 @@ public final class SPPUnboundedL192 {
             writer.write(SweepManifestWriter.HEADER_WITHOUT_EDGE_TRACE
                     + ",stage,run_metadata_path");
             writer.newLine();
-            writer.write("0," + L + "," + C + ",UNBOUNDED," + stage.runs() + ","
-                    + SPPPilot.maxStepsForL(L) + ",ACCEPTED_REQUEST,1," + stage.baseSeed()
-                    + ",L=" + L + "/C=" + C + "/results.csv,TRANSITION_WINDOW_COMPLETE,"
+            int latticeSize = stage.latticeSize();
+            int budget = stage.budget();
+            writer.write("0," + latticeSize + "," + budget + ",UNBOUNDED,"
+                    + stage.runs() + "," + SPPPilot.maxStepsForL(latticeSize)
+                    + ",ACCEPTED_REQUEST,1," + stage.baseSeed()
+                    + ",L=" + latticeSize + "/C=" + budget
+                    + "/results.csv,TRANSITION_WINDOW_COMPLETE,"
                     + stage.transitionThresholdMultiplier() + "," + stage.name()
                     + ",run_metadata.csv");
             writer.newLine();

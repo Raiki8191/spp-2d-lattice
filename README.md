@@ -12,6 +12,7 @@
 - [scaling-v2 の条件・統合FSS・結果](docs/SCALING_V2_RESULTS.md)
 - [scaling-v3 有限サイズ補正解析](docs/SCALING_V3_RESULTS.md)
 - [UNBOUNDED v4: L=192段階実験と漸近モデル再評価](docs/UNBOUNDED_V4_RESULTS.md)
+- [UNBOUNDED v5: L=256パイロットとモデル識別力再評価](docs/UNBOUNDED_V5_RESULTS.md)
 
 ## 環境
 
@@ -108,7 +109,18 @@ UNBOUNDEDのL=192追加実験は、benchmark（3 run）、pilot（追加17 run�
 python -m analysis.unbounded_v4 --stage main --bootstrap-samples 500
 ```
 
-大容量のシャード、集約CSV、解析CSV、PNGはすべて`app/out/`以下に生成され、Git管理対象外です。L=256はこの手順では自動実行しません。
+UNBOUNDEDのL=256段階実験（benchmark 3 run、pilot追加17 run）とv5解析:
+
+```powershell
+.\gradlew.bat run --args="--unbounded-l256-benchmark"
+.\gradlew.bat run --args="--unbounded-l256-pilot"
+.\gradlew.bat run --args="--unbounded-l256-stop-audit"
+python -m analysis.unbounded_v5 --bootstrap-samples 500 --output app/out/unbounded-v5
+```
+
+各stageはrun単位で再開でき、完了済みrunは`resume-skip`されます。今回の研究記録は合計20 runまでであり、50 run以上への増加は自動実行しません。
+
+大容量のシャード、集約CSV、解析CSV、PNGはすべて`app/out/`以下に生成され、Git管理対象外です。L=256は上記の専用引数を明示した場合だけ実行され、通常のsmoke/scalingコマンドからは自動実行しません。
 
 経路内辺順序の副解析用データは次で生成できます。
 
