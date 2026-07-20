@@ -103,7 +103,11 @@ removed_edges + remaining_edges = M0
 
 走査の `manifest.csv` は条件番号、`L`、`C`、budget mode、run数、最大step、測定方式、測定間隔、停止方式、base seed、結果相対パス、および任意のedge trace相対パスを記録する。各条件ディレクトリは原則 `L={L}/C={C}/` である。
 
-`run_summary.csv` は1 run 1行で、終了理由と終端状態を解析側へ渡す。既存ファイルは実験開始時に上書きし、中断再開や追記は実装していない。
+`run_summary.csv` は1 run 1行で、終了理由と終端状態を解析側へ渡す。
+
+通常の `SPPExperimentRunner` / `SPPParameterSweepRunner` は1条件を一括出力する。`CsvWriter.create` により対象の `results.csv`（および有効時のedge trace）を実験開始時に上書きし、通常sweep自体には追記・中断再開機能を持たない。
+
+一方、`L=192` 以降の staged UNBOUNDED runner は長時間計算をrun shard単位に分ける。各 `shards/run=NNNN/` に結果とmetadataを出力し、内容検証後に `.complete` を作成する。再実行時は `.complete` があり、必要なCSVのヘッダーとデータが有効な完了shardだけを `resume-skip` して再利用する。markerがないshardは未完了として再実行し、markerがあっても結果が空、不正ヘッダー、metadata欠損などのshardは集約時にエラーとして扱う。全完了shardはrun番号順に統合される。この再開機構はstaged runner専用であり、通常sweepの上書き仕様を変更しない。
 
 ## 8. 辺削除トレース
 
@@ -156,7 +160,7 @@ Java側では格子、BFS、一様経路選択、seed分離、測定、停止、
 - 大きい `L` と `C` では要求ごとのBFSと `BigInteger` 経路数が支配的になり得る。
 - scaling-v1は `L <= 64` であり、漸近結論には有限サイズ補正の検討が必要である。
 - `UNBOUNDED` のedge-level量は経路内辺順序規約に依存する。
-- 中断再開、並列実行、周期境界は未実装である。
+- 通常sweepの中断再開、並列実行、周期境界は未実装である。staged UNBOUNDED runnerだけはrun shardと `.complete` による再開・完了run再利用を実装している。
 
 ## 12. 独立性
 

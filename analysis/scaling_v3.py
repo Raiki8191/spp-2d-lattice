@@ -297,7 +297,15 @@ def unbounded_fits(combined: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, 
 
 def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: pd.DataFrame,
                       combined: pd.DataFrame, *, samples: int, seed: int) -> pd.DataFrame:
-    """Bootstrap primary L_min=8 fits from run-level observations."""
+    """Bootstrap primary L_min=8 fits from run-level observations.
+
+    Finite-condition bootstrap fits deliberately call the same bounded,
+    original-scale estimators as :func:`finite_correction_fits`.  Earlier v3
+    output used log-log OLS for the bootstrap ``simple_power`` rows while the
+    point estimate used original-scale nonlinear least squares.  Giving those
+    different estimators the same label produced incomparable point estimates
+    and confidence intervals.
+    """
     rng = np.random.default_rng(seed)
     rows: list[dict[str, object]] = []
     metrics = {"P_before": (events, "P_before", -1), "P_after": (events, "P_after", -1),
@@ -320,21 +328,31 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
                 if label == "UNBOUNDED" and observable in ("delta_P_request", "transition_delta_p"):
                     models = _bootstrap_ub_models(Ls, ys)
                 elif label != "UNBOUNDED":
-                    simple = _quick_power_fit(Ls, ys)
-                    omega = _selected_omega(corrections, label, observable)
-                    corrected = _quick_fixed_omega_fit(Ls, ys, omega)
-                    models = [simple, corrected]
+                    if observable in FINITE_OBSERVABLES:
+                        omega = _selected_omega(corrections, label, observable)
+                        fitted = power_model_fits(
+                            Ls, ys, fixed_omegas=(omega,), include_free_omega=False
+                        )
+                        models = fitted[:2]
+                    else:
+                        # These observables retain the scaling-v2 log-log OLS
+                        # point estimator rather than the v3 correction fitter.
+                        models = [_quick_power_fit(Ls, ys)]
                 else:
                     continue
                 for fit in models:
-                    if fit["converged"]:
-                        exponent = fit.get("exponent", fit.get("decay_exponent", np.nan))
-                        reported_exponent = exponent if label == "UNBOUNDED" else sign * exponent
-                        rows.append({"sample": sample, "condition_label": label, "observable": observable,
-                                     "model": fit["model"], "exponent": reported_exponent,
-                                     "limit": fit.get("limit", 0.0), "amplitude": fit.get("amplitude", np.nan),
-                                     "omega": fit.get("omega", np.nan), "correction": fit.get("correction", np.nan),
-                                     "boundary_solution": fit["boundary_solution"]})
+                    exponent = fit.get("exponent", fit.get("decay_exponent", np.nan))
+                    reported_exponent = exponent if label == "UNBOUNDED" else sign * exponent
+                    rows.append({"sample": sample, "condition_label": label, "observable": observable,
+                                 "source_column": column,
+                                 "estimator": _bootstrap_estimator_name(label, observable),
+                                 "L_min": int(np.min(Ls)), "used_L": ";".join(str(int(value)) for value in Ls),
+                                 "bootstrap_seed": seed, "model": fit["model"],
+                                 "converged": bool(fit["converged"]),
+                                 "failure": fit.get("failure", ""), "exponent": reported_exponent,
+                                 "limit": fit.get("limit", 0.0), "amplitude": fit.get("amplitude", np.nan),
+                                 "omega": fit.get("omega", np.nan), "correction": fit.get("correction", np.nan),
+                                 "boundary_solution": fit["boundary_solution"]})
     rows.extend(_bootstrap_joint_and_shift(events, samples=samples, rng=rng))
     return pd.DataFrame(rows)
 
@@ -468,28 +486,6 @@ def _quick_power_fit(L: np.ndarray, y: np.ndarray) -> dict[str, object]:
             "boundary_solution": False, "amplitude": math.exp(log_amplitude)}
 
 
-def _quick_fixed_omega_fit(L: np.ndarray, y: np.ndarray, omega: float) -> dict[str, object]:
-    """Fit A L^x + B L^(x-omega), equivalent to the multiplicative correction."""
-    simple_exponent = float(np.polyfit(np.log(L), np.log(y), 1)[0])
-    lower, upper = max(-5.0, simple_exponent-.75), min(5.0, simple_exponent+.75)
-    def solve(exponent: float) -> tuple[float, np.ndarray]:
-        design = np.column_stack((L**exponent, L**(exponent-omega)))
-        coefficients = np.linalg.lstsq(design, y, rcond=None)[0]
-        prediction = design @ coefficients
-        correction = coefficients[1]/coefficients[0] if coefficients[0] else np.inf
-        invalid = coefficients[0] <= 0 or abs(correction) > 20 or np.any(prediction <= 0)
-        return float(np.sum((y-prediction)**2) + (1e6 if invalid else 0.0)), coefficients
-    grid = np.linspace(lower, upper, 121)
-    best = int(np.argmin([solve(value)[0] for value in grid]))
-    local_lower, local_upper = grid[max(0, best-1)], grid[min(len(grid)-1, best+1)]
-    optimized = minimize_scalar(lambda exponent: solve(exponent)[0], bounds=(local_lower, local_upper), method="bounded")
-    _, coefficients = solve(float(optimized.x))
-    amplitude = float(coefficients[0]); correction = float(coefficients[1] / amplitude) if amplitude else np.nan
-    return {"model": f"corrected_power_omega_{omega:g}", "converged": optimized.success,
-            "exponent": float(optimized.x), "omega": omega, "amplitude": amplitude,
-            "correction": correction, "boundary_solution": optimized.x <= lower+1e-5 or optimized.x >= upper-1e-5}
-
-
 def _bootstrap_ub_models(L: np.ndarray, y: np.ndarray) -> list[dict[str, object]]:
     log_slope, log_amplitude = np.polyfit(np.log(L), np.log(y), 1)
     loglog_slope, loglog_amplitude = np.polyfit(np.log(np.log(L)), np.log(y), 1)
@@ -518,16 +514,28 @@ def _bootstrap_ub_models(L: np.ndarray, y: np.ndarray) -> list[dict[str, object]
 def summarize_bootstrap(frame: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for keys, group in frame.groupby(["condition_label", "observable", "model"], sort=True):
+        converged = (group["converged"].astype(bool) if "converged" in group
+                     else pd.Series(True, index=group.index))
         for parameter in ("exponent", "limit"):
-            values = group[parameter].dropna().to_numpy(float)
+            values = group.loc[converged, parameter].dropna().to_numpy(float)
             if not len(values):
                 continue
             rows.append({"condition_label": keys[0], "observable": keys[1], "model": keys[2],
-                         "parameter": parameter, "samples": len(values), "mean": np.mean(values),
+                         "parameter": parameter, "samples": len(values),
+                         "requested_samples": int(group["sample"].nunique()) if "sample" in group else len(group),
+                         "fit_failures": int((~converged).sum()), "mean": np.mean(values),
                          "median": np.median(values), "ci95_low": np.percentile(values, 2.5),
                          "ci95_high": np.percentile(values, 97.5),
                          "boundary_frequency": float(group["boundary_solution"].mean())})
     return pd.DataFrame(rows)
+
+
+def _bootstrap_estimator_name(condition_label: str, observable: str) -> str:
+    if condition_label == "UNBOUNDED":
+        return "legacy_unbounded_profile_fit"
+    if observable in FINITE_OBSERVABLES:
+        return "bounded_nonlinear_least_squares_original_scale"
+    return "log_log_ordinary_least_squares"
 
 
 def runtime_forecasts(main_directory: Path, *, samples: int, seed: int) -> pd.DataFrame:

@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 
 from analysis.scaling_v3 import (
-    hyperscaling_summary, runtime_forecasts, summarize_bootstrap, unbounded_fits,
+    bootstrap_primary, finite_correction_fits, hyperscaling_summary,
+    runtime_forecasts, summarize_bootstrap, unbounded_fits,
 )
 from analysis.universality_fitting import fit_universality_models
 
@@ -50,6 +51,8 @@ def test_bootstrap_summary_reports_interval_and_boundary_frequency():
     exponent = result.loc[result["parameter"] == "exponent"].iloc[0]
     assert exponent["median"] == pytest.approx(.2)
     assert exponent["boundary_frequency"] == pytest.approx(1/3)
+    assert exponent["fit_failures"] == 0
+    assert exponent["requested_samples"] == 3
 
 
 def test_hyperscaling_combines_two_beta_over_nu_and_gamma_over_nu():
@@ -61,6 +64,35 @@ def test_hyperscaling_combines_two_beta_over_nu_and_gamma_over_nu():
     ])
     result = hyperscaling_summary(fits)
     assert np.allclose(result["hyperscaling_sum"], 2.0)
+
+
+def test_finite_bootstrap_records_the_same_estimator_model_sizes_and_columns():
+    event_rows, width_rows = [], []
+    for C in (1, 2):
+        for L in (8, 12, 16, 24, 32):
+            for run in range(4):
+                factor = 1 + .001 * run
+                event_rows.append({
+                    "L": L, "C": C, "budget_mode": "FINITE",
+                    "P_before": factor * L**-.1, "P_after": factor * L**-.1,
+                    "S_before": factor * L**1.7, "S_after": factor * L**1.7,
+                    "p_mid": .5 + factor * L**-.7, "delta_P_max": factor * L**-.2,
+                })
+                width_rows.append({"L": L, "C": C, "budget_mode": "FINITE",
+                                   "delta_p": factor * L**-.3})
+    corrections = finite_correction_fits(synthetic_summary())
+    result = bootstrap_primary(pd.DataFrame(event_rows), pd.DataFrame(width_rows),
+                               corrections, synthetic_summary(), samples=2, seed=11)
+    rows = result.loc[(result["condition_label"] == "C=1")
+                      & (result["observable"] == "S_after")]
+    assert "simple_power" in set(rows["model"])
+    assert len({model for model in rows["model"] if model.startswith("corrected_power_omega_")}) == 1
+    assert set(rows["source_column"]) == {"S_after"}
+    assert set(rows["estimator"]) == {"bounded_nonlinear_least_squares_original_scale"}
+    assert set(rows["L_min"]) == {8}
+    assert set(rows["used_L"]) == {"8;12;16;24;32"}
+    assert set(rows["bootstrap_seed"]) == {11}
+    assert rows["converged"].all()
 
 
 def test_runtime_forecast_uses_measured_run_summaries(tmp_path):
