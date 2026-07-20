@@ -13,6 +13,8 @@
 - [scaling-v3 有限サイズ補正解析](docs/SCALING_V3_RESULTS.md)
 - [UNBOUNDED v4: L=192段階実験と漸近モデル再評価](docs/UNBOUNDED_V4_RESULTS.md)
 - [UNBOUNDED v5: L=256パイロットとモデル識別力再評価](docs/UNBOUNDED_V5_RESULTS.md)
+- [UNBOUNDED L=320事前予測登録](docs/UNBOUNDED_L320_PREREGISTRATION.md)
+- [UNBOUNDED v6: L=320パイロットと逐次予測評価](docs/UNBOUNDED_V6_RESULTS.md)
 
 ## 環境
 
@@ -117,6 +119,17 @@ UNBOUNDEDのL=256段階実験（benchmark 3 run、pilot追加17 run）とv5解�
 .\gradlew.bat run --args="--unbounded-l256-stop-audit"
 python -m analysis.unbounded_v5 --bootstrap-samples 500 --output app/out/unbounded-v5
 ```
+
+UNBOUNDEDのL=320段階実験（benchmark 3 run、pilot追加17 run）、独立停止監査、v6解析:
+
+```powershell
+.\gradlew.bat run --args="--unbounded-l320-benchmark"
+.\gradlew.bat run --args="--unbounded-l320-pilot"
+.\gradlew.bat run --args="--unbounded-l320-stop-audit"
+python -m analysis.unbounded_v6 --bootstrap-samples 500 --output app/out/unbounded-v6
+```
+
+L=320の予測は実験前コミットで固定済みであり、再生成コマンドは既存のL=320出力を検出すると拒否します。L=320は合計20 runに固定し、50 run以上やL=384を上記コマンドから自動実行しません。
 
 各stageはrun単位で再開でき、完了済みrunは`resume-skip`されます。今回の研究記録は合計20 runまでであり、50 run以上への増加は自動実行しません。
 
