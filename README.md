@@ -11,6 +11,7 @@
 - [scaling-v1 の条件・結果](docs/SCALING_V1_RESULTS.md)
 - [scaling-v2 の条件・統合FSS・結果](docs/SCALING_V2_RESULTS.md)
 - [scaling-v3 有限サイズ補正解析](docs/SCALING_V3_RESULTS.md)
+- [UNBOUNDED v4: L=192段階実験と漸近モデル再評価](docs/UNBOUNDED_V4_RESULTS.md)
 
 ## 環境
 
@@ -96,6 +97,18 @@ python -m analysis.scaling_v2 analyze app/out/scaling-v1/manifest.csv app/out/sc
 ```powershell
 python -m analysis.scaling_v3 --source app/out/scaling-v2-analysis --output app/out/scaling-v3-analysis --bootstrap-samples 500
 ```
+
+UNBOUNDEDのL=192追加実験は、benchmark（3 run）、pilot（追加17 run）、main（追加30 run）の独立manifestに分け、run単位で安全に再開できます。既存のscaling-v2/v3データは再生成しません。
+
+```powershell
+.\gradlew.bat run --args="--unbounded-l192-benchmark"
+.\gradlew.bat run --args="--unbounded-l192-pilot"
+.\gradlew.bat run --args="--unbounded-l192-main"
+.\gradlew.bat run --args="--unbounded-l192-stop-audit"
+python -m analysis.unbounded_v4 --stage main --bootstrap-samples 500
+```
+
+大容量のシャード、集約CSV、解析CSV、PNGはすべて`app/out/`以下に生成され、Git管理対象外です。L=256はこの手順では自動実行しません。
 
 経路内辺順序の副解析用データは次で生成できます。
 

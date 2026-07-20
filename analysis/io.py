@@ -25,6 +25,8 @@ OPTIONAL_MANIFEST_COLUMNS = (
     "stop_mode",
     "transition_threshold_multiplier",
     "edge_trace_path",
+    "stage",
+    "run_metadata_path",
 )
 
 RESULT_COLUMNS = (
@@ -112,6 +114,7 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
 
     resolved_paths: list[str] = []
     resolved_trace_paths: list[str] = []
+    resolved_metadata_paths: list[str] = []
     has_edge_trace = "edge_trace_path" in manifest.columns
     for row in manifest.itertuples(index=False):
         raw_path = Path(str(row.result_path))
@@ -139,6 +142,19 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
                 )
             resolved_trace_paths.append(str(trace_path))
 
+        if "run_metadata_path" in manifest.columns:
+            raw_metadata_path = Path(str(row.run_metadata_path))
+            metadata_path = (
+                raw_metadata_path if raw_metadata_path.is_absolute()
+                else manifest_path.parent / raw_metadata_path
+            ).resolve()
+            if not metadata_path.is_file():
+                raise FileNotFoundError(
+                    "run metadata CSV does not exist for "
+                    f"condition={row.condition_index}: {metadata_path}"
+                )
+            resolved_metadata_paths.append(str(metadata_path))
+
     present_optional_columns = tuple(
         column for column in OPTIONAL_MANIFEST_COLUMNS if column in manifest.columns
     )
@@ -147,6 +163,8 @@ def read_manifest(path: str | Path) -> pd.DataFrame:
     manifest["result_path"] = resolved_paths
     if has_edge_trace:
         manifest["edge_trace_path"] = resolved_trace_paths
+    if "run_metadata_path" in manifest.columns:
+        manifest["run_metadata_path"] = resolved_metadata_paths
     manifest.attrs["manifest_path"] = str(manifest_path)
     return manifest
 

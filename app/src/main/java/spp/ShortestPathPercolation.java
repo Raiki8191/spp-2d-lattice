@@ -53,6 +53,22 @@ public final class ShortestPathPercolation {
             SPPScalingV2.runSmoke(System.out);
             return;
         }
+        if (args.length == 1 && "--unbounded-l192-benchmark".equals(args[0])) {
+            SPPUnboundedL192.run(SPPUnboundedL192.benchmarkStage(), System.out);
+            return;
+        }
+        if (args.length == 1 && "--unbounded-l192-pilot".equals(args[0])) {
+            SPPUnboundedL192.run(SPPUnboundedL192.pilotStage(), System.out);
+            return;
+        }
+        if (args.length == 1 && "--unbounded-l192-main".equals(args[0])) {
+            SPPUnboundedL192.run(SPPUnboundedL192.mainStage(), System.out);
+            return;
+        }
+        if (args.length == 1 && "--unbounded-l192-stop-audit".equals(args[0])) {
+            SPPUnboundedL192.run(SPPUnboundedL192.auditStage(), System.out);
+            return;
+        }
         if (args.length != 0) {
             throw new IllegalArgumentException(
                     "supported arguments: --pilot, --scaling-benchmark, "
@@ -60,7 +76,9 @@ public final class ShortestPathPercolation {
                             + "--scaling-v1-smoke, --scaling-v1-order-check, "
                             + "--scaling-v2-benchmark, --scaling-v2-benchmark-smoke, "
                             + "--scaling-v2-main, --scaling-v2-stop-audit, "
-                            + "--scaling-v2-main-smoke");
+                            + "--scaling-v2-main-smoke, --unbounded-l192-benchmark, "
+                            + "--unbounded-l192-pilot, --unbounded-l192-main, "
+                            + "--unbounded-l192-stop-audit");
         }
         new SPPParameterSweepRunner(createSmokeSweepPlan()).run(System.out);
     }

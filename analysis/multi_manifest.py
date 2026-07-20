@@ -59,7 +59,8 @@ def read_condition(condition: ManifestCondition, *, validate: bool = True) -> pd
     row = condition.metadata.copy()
     row["condition_index"] = condition.source_condition_index
     columns = [column for column in row.index if column in MANIFEST_COLUMNS or column in (
-        "stop_mode", "transition_threshold_multiplier", "edge_trace_path"
+        "stop_mode", "transition_threshold_multiplier", "edge_trace_path",
+        "stage", "run_metadata_path"
     )]
     one = pd.DataFrame([{column: row[column] for column in columns}])
     one.attrs["manifest_path"] = condition.source_manifest

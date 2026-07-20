@@ -95,3 +95,17 @@ def test_rejects_duplicate_condition_invalid_mode_and_missing_result(tmp_path, m
     with pytest.raises(FileNotFoundError, match="condition=1"):
         read_manifest(manifest_path)
 
+
+def test_preserves_stage_and_resolves_optional_run_metadata(tmp_path, make_sweep):
+    manifest_path = make_sweep(tmp_path)
+    metadata_path = tmp_path / "run_metadata.csv"
+    metadata_path.write_text("run,run_seed\n0,123\n", encoding="utf-8")
+    frame = pd.read_csv(manifest_path)
+    frame["stage"] = "unbounded-l192-benchmark"
+    frame["run_metadata_path"] = "run_metadata.csv"
+    frame.to_csv(manifest_path, index=False)
+
+    manifest = read_manifest(manifest_path)
+
+    assert manifest.loc[0, "stage"] == "unbounded-l192-benchmark"
+    assert Path(manifest.loc[0, "run_metadata_path"]) == metadata_path.resolve()
