@@ -6,6 +6,15 @@ import numpy as np
 import pandas as pd
 
 
+def require_request_measurements(manifest: pd.DataFrame) -> None:
+    """Reject sparse measurement modes before interpreting rows as requests."""
+
+    if "measurement_mode" not in manifest.columns:
+        raise ValueError("request analysis requires manifest measurement_mode")
+    if (manifest["measurement_mode"] != "ACCEPTED_REQUEST").any():
+        raise ValueError("request analysis requires ACCEPTED_REQUEST measurements")
+
+
 def build_request_transitions(results: pd.DataFrame) -> pd.DataFrame:
     """Return graph-changing transitions between consecutive measured states."""
 
@@ -35,6 +44,19 @@ def build_request_transitions(results: pd.DataFrame) -> pd.DataFrame:
         ordered = group.sort_values("step").reset_index(drop=True)
         before = ordered.shift(1)
         changing = ordered["removed_edges"] > before["removed_edges"]
+        if "accepted_requests" in ordered.columns:
+            increments = ordered["accepted_requests"] - before["accepted_requests"]
+            if (changing & (increments != 1)).any():
+                raise ValueError(
+                    "request transitions require one accepted request per changed state "
+                    f"at condition={int(condition_index)}, run={int(run)}"
+                )
+            unchanged = before["accepted_requests"].notna() & ~changing
+            if (unchanged & (increments != 0)).any():
+                raise ValueError(
+                    "unchanged state has a nonzero accepted-request increment "
+                    f"at condition={int(condition_index)}, run={int(run)}"
+                )
         after_rows = ordered.loc[changing]
         before_rows = before.loc[changing]
         if after_rows.empty:

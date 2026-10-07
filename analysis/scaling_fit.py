@@ -6,6 +6,7 @@ import math
 
 import numpy as np
 import pandas as pd
+from scipy.stats import t as student_t
 
 
 L_MIN_VALUES = (8, 12, 16, 24, 32, 48)
@@ -19,7 +20,6 @@ FIT_SPECS = {
     "delta_p_request": ("delta_p_request_mean", -1),
     "transition_delta_p": ("delta_p_mean", -1),
 }
-_T_975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571}
 
 
 def fit_scaling(
@@ -96,7 +96,7 @@ def _fit_row(
     slope_standard_error = math.sqrt(
         (residual_sum / degrees_freedom) / float(np.sum((x - x.mean()) ** 2))
     )
-    t_critical = _T_975.get(degrees_freedom, 1.96)
+    t_critical = float(student_t.ppf(0.975, degrees_freedom))
     slope_low = slope - t_critical * slope_standard_error
     slope_high = slope + t_critical * slope_standard_error
     parameter_count = 2

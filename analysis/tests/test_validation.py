@@ -104,3 +104,84 @@ def _three_rows(tmp_path, make_sweep, measurement_mode="STEP_INTERVAL"):
     final["rejected_requests"] = 0
     results = pd.concat([results, final.to_frame().T], ignore_index=True)
     return manifest, results
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), -float("inf")])
+def test_rejects_nonfinite_cluster_mean(tmp_path, make_sweep, value):
+    manifest, results = load_sweep(make_sweep(tmp_path))
+    results.loc[1, "mean_cluster_size"] = value
+
+    with pytest.raises(ValueError, match="non-finite"):
+        validate_sweep(manifest, results)
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [("largest_cluster_size", 0), ("second_largest_cluster_size", -1),
+     ("second_largest_cluster_size", 5), ("mean_cluster_size", -1.0)],
+)
+def test_rejects_impossible_cluster_statistics(tmp_path, make_sweep, column, value):
+    manifest, results = load_sweep(make_sweep(tmp_path))
+    results.loc[1, column] = value
+    if column == "largest_cluster_size":
+        results.loc[1, "largest_cluster_fraction"] = value / 4
+
+    with pytest.raises(ValueError, match="cluster"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_missing_declared_run(tmp_path, make_sweep):
+    manifest, results = load_sweep(make_sweep(tmp_path, runs=2))
+    results = results.loc[results["run"] == 0]
+
+    with pytest.raises(ValueError, match="run IDs do not match"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_missing_entire_condition(tmp_path, make_sweep):
+    manifest, results = load_sweep(make_sweep(
+        tmp_path, conditions=[
+            {"condition_index": 0, "L": 2, "C": 1, "budget_mode": "FINITE"},
+            {"condition_index": 1, "L": 3, "C": 1, "budget_mode": "FINITE"},
+        ]
+    ))
+    results = results.loc[results["condition_index"] == 0]
+
+    with pytest.raises(ValueError, match="run IDs do not match.*condition=1"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_missing_initial_measurement(tmp_path, make_sweep):
+    manifest, results = load_sweep(make_sweep(tmp_path))
+    results = results.loc[results["step"] != 0]
+
+    with pytest.raises(ValueError, match="initial step 0"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_noninitial_graph_at_step_zero(tmp_path, make_sweep):
+    manifest, results = _three_rows(tmp_path, make_sweep)
+    # Retain consistent fractions/component statistics while changing initial graph.
+    results.loc[0, "largest_cluster_size"] = 3
+    results.loc[0, "largest_cluster_fraction"] = .75
+    results.loc[0, "second_largest_cluster_size"] = 1
+    results.loc[0, "mean_cluster_size"] = 1.0
+
+    with pytest.raises(ValueError, match="initial graph state"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_seed_change_within_run(tmp_path, make_sweep):
+    manifest, results = load_sweep(make_sweep(tmp_path))
+    results.loc[1, "seed"] += 1
+
+    with pytest.raises(ValueError, match="seed changed within run"):
+        validate_sweep(manifest, results)
+
+
+def test_rejects_duplicate_run_seeds_within_condition(tmp_path, make_sweep):
+    manifest, results = load_sweep(make_sweep(tmp_path, runs=2))
+    results["seed"] = 100
+
+    with pytest.raises(ValueError, match="duplicate run seed"):
+        validate_sweep(manifest, results)

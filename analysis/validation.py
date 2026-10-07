@@ -35,6 +35,12 @@ def validate_sweep(
         "results",
     )
 
+    _fail_first(
+        results,
+        ~np.isfinite(results.loc[:, RESULT_COLUMNS].to_numpy(float)).all(axis=1),
+        "results contains a non-finite numeric value",
+    )
+
     metadata = manifest.set_index("condition_index", drop=False)
     condition_ids = results["condition_index"]
     expected_L = condition_ids.map(metadata["L"])
@@ -103,6 +109,19 @@ def validate_sweep(
 
     grouped = results.groupby(["condition_index", "run"], sort=False, dropna=False)
     for (condition_index, run), group in grouped:
+        first = group.iloc[0]
+        if int(first["step"]) != 0:
+            _fail(first, "initial step 0 measurement is missing")
+        if (
+            int(first["removed_edges"]) != 0
+            or int(first["accepted_requests"]) != 0
+            or int(first["rejected_requests"]) != 0
+            or int(first["largest_cluster_size"]) != int(first["L"]) ** 2
+            or int(first["second_largest_cluster_size"]) != 0
+            or float(first["mean_cluster_size"]) != 0.0
+        ):
+            _fail(first, "initial graph state does not match the intact lattice")
+        _fail_first(group, group["seed"] != first["seed"], "seed changed within run")
         steps = group["step"].to_numpy(dtype=np.int64)
         if len(steps) > 1:
             bad = np.flatnonzero(np.diff(steps) <= 0)
@@ -128,6 +147,39 @@ def validate_sweep(
                         group.iloc[int(bad[0]) + 1],
                         "ACCEPTED_REQUEST measurement did not increase removed_edges",
                     )
+
+    vertex_count = results["L"] ** 2
+    largest = results["largest_cluster_size"]
+    second = results["second_largest_cluster_size"]
+    connected = largest == vertex_count
+    _fail_first(
+        results,
+        (largest < 1) | (largest > vertex_count) | (second < 0)
+        | (second > largest) | (largest + second > vertex_count)
+        | (connected & (second != 0)) | (~connected & (second < 1)),
+        "impossible cluster sizes",
+    )
+    mean = results["mean_cluster_size"]
+    _fail_first(
+        results,
+        (mean < 0.0) | (connected & ~np.isclose(mean, 0.0, rtol=rtol, atol=atol))
+        | (~connected & ((mean < 1.0 - atol) | (mean > second + atol))),
+        "mean_cluster_size is inconsistent with finite cluster size bounds",
+    )
+    for condition in manifest.itertuples(index=False):
+        data = results.loc[results["condition_index"] == condition.condition_index]
+        actual = set(int(value) for value in data["run"].unique())
+        expected = set(range(int(condition.runs)))
+        if actual != expected:
+            raise ValueError(
+                f"run IDs do not match manifest at condition={int(condition.condition_index)}: "
+                f"expected {sorted(expected)}, observed {sorted(actual)}"
+            )
+        starts = data.groupby("run", sort=True).first()
+        if starts["seed"].duplicated().any():
+            raise ValueError(
+                f"duplicate run seed at condition={int(condition.condition_index)}"
+            )
 
     return ValidationSummary(
         condition_count=int(results["condition_index"].nunique()),

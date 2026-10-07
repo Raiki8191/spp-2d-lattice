@@ -1,5 +1,10 @@
 # UNBOUNDED v7: L=384 事前登録実験と停止監査
 
+> **CURRENT / CORRECTED / HISTORICAL**：v7は最新のL≤384段階である。観測・主点fitはCURRENT、正式なfit不確実性はPhase 4FのCORRECTED成果物を用いる。原登録予測と当時の区間はHISTORICALな事前証拠として保持し、旧fit bootstrap区間を現在の正式値に使用しない。
+
+> **bootstrap訂正（Phase 4F、2026-10-07）**：本文のモデルfit bootstrap CI、区間由来の予測・被覆・densityは当時の出力である。主fitと異なる推定器を使っていたため、正式な不確実性評価は[UNBOUNDED_BOOTSTRAP_CORRECTION.md](UNBOUNDED_BOOTSTRAP_CORRECTION.md)と`app/out/unbounded-v7-bootstrap-corrected/`を参照する。raw観測、単一サイズの直接再標本化CI、主fit・AICc/BIC・LOO・固定点予測・事前登録原本はこの訂正で変更しない。歴史的出力は保存する。
+
+
 ## 1. 目的と位置づけ
 
 本解析は、UNBOUNDED 条件の最大 request jump がゼロへ漸近するか、有限値へ漸近するかを、`L=384` の観測を追加して再評価するものである。`L=384` を見る前に v6（最大 `L=320`）だけから予測を固定し、その後に benchmark 3 run、pilot 17 runを順に実行した。したがって、本章では事前予測と事後fitを区別する。
@@ -18,6 +23,8 @@
 
 最大 request jump の `L=384` 点予測は、zero-power/finite-power が `0.262769`、zero-log/finite-log が `0.270196` であった。power/log 間の点予測差 `0.007427` は、20 runで想定した SEM `0.014489` より小さく、事前登録時点から単一サイズだけでの識別困難性が予想されていた。
 
+原CSVの`generation_timestamp_utc`は、生成器が解析元commitのcommitter時刻を保存する欄であり、実生成のwall-clock時刻ではない。登録が観測前である根拠は、原本を追加した登録commitと最初のシミュレーション開始の順序である。原欄を変更せず、実生成時刻が記録されているとは主張しない。
+
 ## 3. 実験設計と実行
 
 共通条件は `L=384`、`N=C=147456`、開放境界、`ACCEPTED_REQUEST` 測定、`TRANSITION_WINDOW_COMPLETE` 停止、edge trace 無効である。seed は専用範囲 `3840000` から連続に割り当て、既存の `L=192,256,320` と重複しない。
@@ -28,9 +35,9 @@
 | pilot | 17 | 3840003–3840019 | `app/out/unbounded-l384/pilot/` |
 | stop audit | 3 | benchmarkと同じ | `app/out/unbounded-l384/stop-audit/` |
 
-benchmark は38.5秒、pilotは255.2秒、合計20 runの記録時間は293.4秒であった。run時間は平均14.67秒、中央値14.58秒、最小11.94秒、最大19.27秒である。最大heapは約406 MiB、20 runのresults shard合計は約4.50 MB、統合データ行数は34,831行だった。全runが `TRANSITION_WINDOW_COMPLETE` で終了し、14列、不変条件、欠損、step順、削除辺単調性、seed一意性を検証した。
+metadata elapsedの和はbenchmark38.5秒、pilot254.9秒、合計20 runで293.4秒であった。run時間は平均14.67秒、中央値14.58秒、最小11.94秒、最大19.27秒である。最大heapは約406 MiB、20 runのresults shard合計は約4.50 MB、統合データ行数は34,831行だった。全runが `TRANSITION_WINDOW_COMPLETE` で終了し、14列、不変条件、欠損、step順、削除辺単調性、seed一意性を検証した。
 
-20 runへの単純外挿は約4.9分で、v6の予測約235秒より約9%長かった。これは実測であり、将来サイズの時間は予測値として区別する。
+実metadata合計293.4秒は、[v6性能候補表](../app/out/unbounded-v6/experiment_options.csv)のL^4外挿293.5秒と約0.1%以内で一致した。ここでstage別・全run合計はmetadata elapsedの和を示す。pilotの最初の開始から最後の終了までのspanは255.2秒であり、計測範囲が異なる。性能外挿はモデル仮定に基づく概算で、他環境や将来サイズでの一致を保証しない。
 
 ## 4. 停止監査
 
@@ -68,7 +75,7 @@ benchmarkの3 seedを、より遅い停止位置まで独立出力へ延長し�
 
 4モデルすべての95%予測区間が観測bootstrap区間と重なった。絶対誤差とpredictive log densityではzero-powerが最良だったが、事前予測区間自体が広く、L=384単独で他モデルを排除する証拠にはならない。`S_peak` は事前予測モデル間の幅が大きく、fit境界・補外依存も強いため探索的結果とする。
 
-L=256、320、384の逐次予測をまとめると、zero-powerのMAE `0.01287`、RMSE `0.01661` が最小だった。全モデルの予測区間被覆率は3サイズ中2サイズ（0.667）であり、L=320は全モデルにとって難しい観測だった。特定の1サイズだけの勝敗ではなく、この累積性能を重視する。
+L=256、320、384の逐次予測をまとめると、zero-powerのMAE `0.01287`、RMSE `0.01661` が最小だった。全モデルの区間内率は3サイズ中2サイズ（0.667）であり、L=320は全モデルにとって難しい観測だった。特定の1サイズだけの勝敗ではなく、この累積性能を重視する。ただしL=256はモデル平均CI、L=320/384は残差合成PIであり、この2/3を均一な名目95%予測区間の校正確認とはしない。原登録PIと事後訂正区間も区別する。
 
 ## 8. v7 漸近モデルfit
 
@@ -88,13 +95,13 @@ L=256、320、384の逐次予測をまとめると、zero-powerのMAE `0.01287`�
 | zero-log | -113.543 | -113.613 | 0.009522 | 0.012393 | 0.29948 | 0固定 |
 | finite-log | -110.076 | -111.048 | 0.009522 | 0.012393 | 0.29948 | 約0（境界） |
 
-zero-powerはAICc、BIC、LOO RMSEで最良で、LOO MAEも僅差で最良だった。finiteモデルの点推定はゼロ境界へ退化し、追加パラメータの利得がないため主fitでは不採用である。一方、finite-powerのbootstrap `Y_inf` 95%区間は概ね `[5.3e-7, 0.248]`、finite-logは `[8.3e-8, 0.100]` と広い。高いパラメータ相関（最大0.999以上）もあり、有限極限を統計的に排除したとは解釈しない。
+zero-powerはAICc、BIC、LOO RMSEで最良で、LOO MAEも僅差で最良だった。finiteモデルの点推定はゼロ境界へ退化し、追加パラメータの利得がないため主fitでは不採用である。一方、finite-powerのbootstrap `Y_inf` 95%区間は概ね `[5.3e-7, 0.248]`、finite-logは `[8.3e-8, 0.100]` と広い。これらは旧HISTORICAL / SUPERSEDED区間である。現行の有限極限区間はpower `[3.444047e-23, 0.2480454955]`、log `[5.107526e-23, 0.1000251803]`で、[正式CSV](../app/out/unbounded-v7-bootstrap-corrected/unbounded_bootstrap_intervals.csv)を参照する。高いパラメータ相関（最大0.999以上）もあり、有限極限を統計的に排除したとは解釈しない。
 
 `L_min=8`〜96ではzero-powerのAICc順位が一貫してzero-log以上だった。ただし両者の差は大サイズ側だけでは縮まり、局所有効指数は `192→256`、`256→320`、`320→384` で大きく揺れ、最後の区間では符号が反転した。このため、全サイズでのzero-power優位と、局所漸近形の未確定性を分けて記述する。
 
 ## 9. power と log の識別力
 
-parametric bootstrap 500反復では、zero-powerを真としたときzero-powerを選ぶ率は0.806、zero-logを真としたときzero-logを選ぶ率は0.826だった。誤選択率はそれぞれ0.194、0.174である。これは現在のサイズ・SEMにある程度の識別力があることを示すが、完全ではなく、生成モデル仮定に依存する。
+parametric bootstrap 500反復では、zero-powerを真としたときzero-powerを選ぶ率は0.806、zero-logを真としたときzero-logを選ぶ率は0.826だった。誤選択率はそれぞれ0.194、0.174である。この率は、当てはめた各zeroモデルを真とし、各サイズのmean SEMを用いた独立Gaussian生成と非正値の数値floor、二つのzero候補のAICc選択に条件付けた値である。実モデルが真である確率、finite候補を排除する率、全候補間の識別率ではない。生成仮定の下での識別力診断として扱う。
 
 モデル順位はv4（最大L=192）とv5（256）ではzero-logが1位、v6（320）とv7（384）ではzero-powerが1位へ移った。新しいサイズ追加ごとに証拠が一方向に強まり続けたわけではない。現時点の分類は「ゼロ漸近が優勢、その中ではzero-powerが優勢だが、power/logを確定できない」である。
 
@@ -119,6 +126,8 @@ L=512の3 run benchmarkは約138秒、20 run pilotは約922秒という経験的
 UNBOUNDED条件についてL=384、20 runを事前登録方式で追加した。最大 request jump は `0.2574±0.0133`（SEM）で、L=320より平均は0.0118大きかったが、差のbootstrap区間は0を含んだ。L=8〜384の全サイズfitではゼロ漸近power則がAICc、BICおよびLOO RMSEで最良となり、有限極限モデルの点推定はゼロ境界へ退化した。逐次予測でもzero-powerの誤差が最小であった。一方、有限極限のbootstrap上限は広く、局所有効指数も大サイズ側で揺れるため、有限極限を厳密に排除した、またはpower則と対数則を確定的に識別したとは言えない。現サイズ範囲では「最大request jumpはゼロへ減衰する描像が優勢だが、漸近関数形は未確定」という結論が最も防御可能である。
 
 ## 13. 成果物と再現
+
+以下は当時の生成コマンド（HISTORICAL）。完成済み実験・解析出力や原登録を上書きしない。現在の訂正成果物と[監査台帳](ANALYSIS_AUDIT_CORRECTIONS.md)を優先する。
 
 解析:
 

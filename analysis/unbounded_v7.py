@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from analysis.artifact_status import corrected_unbounded_intervals
+
 from analysis.io import read_manifest
 from analysis.unbounded_model_comparison import (
     bootstrap_models, fit_models, leave_one_size_out, predict, prediction_table,
@@ -194,7 +196,7 @@ def model_history(fits: pd.DataFrame, loo: pd.DataFrame, intervals: pd.DataFrame
         f=pd.read_csv(root/"unbounded_model_fits.csv")
         ls=(pd.read_csv(root/"unbounded_loo_summary.csv") if (root/"unbounded_loo_summary.csv").is_file()
             else summarize_loo(pd.read_csv(root/"unbounded_leave_one_size_out.csv")))
-        ci=pd.read_csv(root/"unbounded_bootstrap_intervals.csv")
+        ci=pd.read_csv(corrected_unbounded_intervals(version))
         tables.append(_history_rows(version,f,ls,ci))
     tables.append(_history_rows("v7",fits,loo,intervals))
     result=pd.concat(tables,ignore_index=True)

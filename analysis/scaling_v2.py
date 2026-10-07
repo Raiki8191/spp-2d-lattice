@@ -21,6 +21,7 @@ import pandas as pd
 
 from analysis.model_fitting import constant_power, fit_power_models, fit_shift, pure_power
 from analysis.multi_manifest import iter_conditions, logical_manifest, read_condition
+from analysis.request_event import require_request_measurements
 from analysis.request_fss import BOOTSTRAP_METRICS, prepare_request_events, summarize_request_fss
 from analysis.scaling_fit import fit_scaling
 from analysis.stop_extension import analyze_stop_extension, summarize_stop_extension
@@ -47,6 +48,7 @@ def analyze_manifests(
     width_frames: list[pd.DataFrame] = []
     peak_bytes = 0
     metadata = logical_manifest(manifest_paths)
+    require_request_measurements(metadata)
     metadata.to_csv(output / "logical_manifest.csv", index=False, encoding="utf-8")
 
     for condition in iter_conditions(manifest_paths):
@@ -142,6 +144,8 @@ def audit_stops(
 
     output = Path(output_directory)
     output.mkdir(parents=True, exist_ok=True)
+    for manifest_path in (main_manifest, audit_manifest):
+        require_request_measurements(logical_manifest([manifest_path]))
     main_conditions = {(c.metadata["L"], c.metadata["C"]): c for c in iter_conditions([main_manifest])}
     run_frames: list[pd.DataFrame] = []
     for audit_condition in iter_conditions([audit_manifest]):
@@ -281,6 +285,11 @@ def _fit_record(observable: str, model: str, L_min: int, L: np.ndarray,
     return row
 
 
+def _bootstrap_finite_power_fit(L: np.ndarray, values: np.ndarray) -> dict[str, object]:
+    """Apply the point estimator, including its bounded multistart policy."""
+    return fit_power_models(L, values)[1]
+
+
 def _unbounded_models(events: pd.DataFrame, widths: pd.DataFrame,
                       request_summary: pd.DataFrame, transition_summary: pd.DataFrame,
                       *, bootstrap_samples: int, bootstrap_seed: int):
@@ -316,14 +325,11 @@ def _unbounded_models(events: pd.DataFrame, widths: pd.DataFrame,
                 samples: list[float] = []
                 groups = {int(size): group["delta_P_max"].to_numpy(float)
                           for size, group in ub_events.loc[ub_events["L"] >= L_min].groupby("L")}
-                start = np.asarray(model_b["parameters"])
                 for sample in range(bootstrap_samples):
                     means = np.asarray([rng.choice(groups[int(size)], len(groups[int(size)]), replace=True).mean() for size in L])
                     try:
-                        from scipy.optimize import curve_fit
-                        parameters, _ = curve_fit(constant_power, L, means, p0=start,
-                            bounds=((0.0, np.finfo(float).eps, np.finfo(float).eps), (np.inf, np.inf, 10.0)), maxfev=20_000)
-                        samples.append(float(parameters[0]))
+                        fit = _bootstrap_finite_power_fit(L, means)
+                        samples.append(float(fit["parameters"][0]))
                     except (RuntimeError, ValueError):
                         samples.append(np.nan)
                 valid = np.asarray(samples)[np.isfinite(samples)]

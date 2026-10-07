@@ -27,6 +27,7 @@ from analysis.order_sensitivity import ORDER_MODES, reorder_within_requests
 from analysis.request_event import (
     build_request_transitions,
     extract_request_events,
+    require_request_measurements,
     summarize_request_events,
 )
 from analysis.transition_width import (
@@ -44,6 +45,7 @@ def analyze_request_events(
 ) -> list[Path]:
     started = time.perf_counter()
     manifest, results = load_sweep(manifest_path)
+    require_request_measurements(manifest)
     validation = validate_sweep(manifest, results)
     transitions = build_request_transitions(results)
     request_events = extract_request_events(transitions)

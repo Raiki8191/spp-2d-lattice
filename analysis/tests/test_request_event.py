@@ -181,3 +181,69 @@ def trace_frame(edge_ids: list[int]) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
+
+
+def test_request_transitions_reject_sparse_multi_request_measurements() -> None:
+    results = results_frame(
+        removed=[0, 2, 5],
+        p=[0.0, 0.1, 0.25],
+        P=[1.0, 0.75, 0.25],
+        S=[0.0, 1.0, 2.0],
+        steps=[0, 5, 10],
+        L=4,
+    )
+    results["accepted_requests"] = [0, 1, 3]
+
+    import pytest
+
+    with pytest.raises(ValueError, match="one accepted request"):
+        build_request_transitions(results)
+
+
+def test_request_transitions_reject_changed_counter_for_unchanged_state() -> None:
+    results = results_frame(
+        removed=[0, 1, 1],
+        p=[0.0, 0.25, 0.25],
+        P=[1.0, 0.75, 0.75],
+        S=[0.0, 1.0, 1.0],
+        steps=[0, 1, 5],
+    )
+    results["accepted_requests"] = [0, 1, 2]
+
+    import pytest
+
+    with pytest.raises(ValueError, match="unchanged state"):
+        build_request_transitions(results)
+
+
+def test_terminal_rejection_does_not_create_event_or_change_valid_width() -> None:
+    results = results_frame(
+        removed=[0, 1, 2, 3, 3],
+        p=[0.0, 1 / 24, 2 / 24, 3 / 24, 3 / 24],
+        P=[1.0, 10 / 16, 6 / 16, 3 / 16, 3 / 16],
+        S=[0.0, 1.0, 2.0, 1.0, 1.0],
+        steps=[0, 2, 10, 20, 50],
+        L=4,
+    )
+    results["accepted_requests"] = [0, 1, 2, 3, 3]
+    accepted_only = results.iloc[:-1].copy()
+
+    pd.testing.assert_frame_equal(
+        build_request_transitions(results), build_request_transitions(accepted_only)
+    )
+    pd.testing.assert_frame_equal(
+        calculate_transition_widths(results), calculate_transition_widths(accepted_only)
+    )
+    assert len(build_request_transitions(results)) == 3
+
+
+def test_request_measurement_requirement_rejects_interval_mode() -> None:
+    from analysis.request_event import require_request_measurements
+    import pytest
+
+    manifest = manifest_frame()
+    require_request_measurements(manifest)
+    manifest.loc[0, "measurement_mode"] = "STEP_INTERVAL"
+
+    with pytest.raises(ValueError, match="ACCEPTED_REQUEST"):
+        require_request_measurements(manifest)

@@ -19,6 +19,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from analysis.artifact_status import corrected_unbounded_intervals
+
 from analysis.io import read_manifest
 from analysis.unbounded_model_comparison import (
     bootstrap_models, fit_models, leave_one_size_out, predict,
@@ -289,7 +291,7 @@ def compare_v4_v5(
     old_fits = pd.read_csv("app/out/unbounded-v4/main50/unbounded_model_fits.csv")
     old_loo_raw = pd.read_csv("app/out/unbounded-v4/main50/unbounded_leave_one_size_out.csv")
     old_loo = summarize_loo(old_loo_raw)
-    old_intervals = pd.read_csv("app/out/unbounded-v4/main50/unbounded_bootstrap_intervals.csv")
+    old_intervals = pd.read_csv(corrected_unbounded_intervals("v4"))
     old_predictions = pd.read_csv("app/out/unbounded-v4/main50/unbounded_predictions.csv")
     rows = []
     common = sorted(set(old_fits.observable).intersection(fits.observable))

@@ -7,7 +7,6 @@ import math
 
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize_scalar
 
 from analysis.correction_fitting import (
     fit_bounded_multistart,
@@ -119,7 +118,12 @@ def bootstrap_models(
     samples: int,
     seed: int,
 ) -> pd.DataFrame:
-    """Run-stratified bootstrap; each L is resampled at its own run count."""
+    """Resample runs within each L and apply the unchanged point estimator.
+
+    The fitting equation, original-scale objective, bounds, multistart search
+    and diagnostics are all provided by ``fit_models``.  Failed fits remain in
+    the output rather than being replaced with a different fitting method.
+    """
 
     if aggregation not in {"mean", "std"}:
         raise ValueError("aggregation must be mean or std")
@@ -134,61 +138,40 @@ def bootstrap_models(
             estimate = float(np.mean(draw) if aggregation == "mean" else np.std(draw, ddof=1))
             points.append((L, estimate))
         sizes, values = map(np.asarray, zip(*points))
-        for fit in _quick_models(sizes, values):
+        for fit in fit_models(sizes, values, observable=observable).to_dict("records"):
             rows.append({
                 "sample": sample,
-                "observable": observable,
-                "model": fit["model"],
-                "converged": fit["converged"],
-                "boundary_solution": fit["boundary_solution"],
-                "covariance_ok": fit["covariance_ok"],
-                "limit": fit.get("limit", np.nan),
+                **fit,
                 "amplitude": fit.get("amplitude", np.nan),
                 "decay_exponent": fit.get("decay_exponent", np.nan),
+                # A zero finite limit is distinct from a hit on another bound.
+                # The tolerance is the limit [0, 1] bound tolerance used by
+                # fit_bounded_multistart; the stored estimate is never clipped.
+                "finite_limit_zero_boundary": bool(
+                    fit["converged"] and str(fit["model"]).startswith("finite")
+                    and 0.0 <= float(fit["limit"]) <= 1.0e-8
+                ),
             })
     return pd.DataFrame(rows)
-
-
-def _quick_models(sizes: np.ndarray, values: np.ndarray) -> list[dict[str, object]]:
-    """Fast bootstrap fits; full reported fits still use bounded multi-start."""
-
-    log_slope, log_amplitude = np.polyfit(np.log(sizes), np.log(values), 1)
-    loglog_slope, loglog_amplitude = np.polyfit(np.log(np.log(sizes)), np.log(values), 1)
-    rows = [
-        {"model": "zero_power", "converged": True, "boundary_solution": False,
-         "covariance_ok": True, "limit": 0.0, "amplitude": math.exp(log_amplitude),
-         "decay_exponent": -float(log_slope)},
-        {"model": "zero_log", "converged": True, "boundary_solution": False,
-         "covariance_ok": True, "limit": 0.0, "amplitude": math.exp(loglog_amplitude),
-         "decay_exponent": -float(loglog_slope)},
-    ]
-    for model, basis, upper in (
-        ("finite_power", lambda q: sizes ** -q, 5.0),
-        ("finite_log", lambda q: np.log(sizes) ** -q, 10.0),
-    ):
-        def solve(q: float) -> tuple[float, np.ndarray]:
-            design = np.column_stack((np.ones(len(sizes)), basis(q)))
-            coefficients = np.linalg.lstsq(design, values, rcond=None)[0]
-            penalty = 1e8 * min(float(coefficients[0]), 0.0) ** 2
-            return float(np.sum((values - design @ coefficients) ** 2) + penalty), coefficients
-        optimized = minimize_scalar(lambda q: solve(q)[0], bounds=(.001, upper), method="bounded")
-        _, coefficients = solve(float(optimized.x))
-        limit = max(float(coefficients[0]), 0.0)
-        rows.append({
-            "model": model, "converged": bool(optimized.success),
-            "boundary_solution": bool(limit <= 1e-10 or optimized.x <= .00101
-                                      or optimized.x >= upper - 1e-5),
-            "covariance_ok": True, "limit": limit,
-            "amplitude": float(coefficients[1]), "decay_exponent": float(optimized.x),
-        })
-    return rows
 
 
 def summarize_bootstrap(bootstrap: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for (observable, model), group in bootstrap.groupby(["observable", "model"], sort=True):
         converged = group.loc[group["converged"]]
-        for parameter in ("limit", "decay_exponent"):
+        finite = str(model).startswith("finite")
+        zero_limit_frequency = (
+            float(converged["limit"].between(0.0, 1.0e-8).mean())
+            if finite and len(converged) else np.nan
+        )
+        correlations = converged.reindex(
+            columns=["limit_decay_correlation"]
+        )["limit_decay_correlation"].dropna()
+        empirical_correlation = (
+            float(converged[["limit", "decay_exponent"]].corr().iloc[0, 1])
+            if finite and len(converged) > 1 else np.nan
+        )
+        for parameter in ("limit", "amplitude", "decay_exponent"):
             values = converged[parameter].dropna().to_numpy(float)
             if not len(values):
                 continue
@@ -209,6 +192,11 @@ def summarize_bootstrap(bootstrap: pd.DataFrame) -> pd.DataFrame:
                 "boundary_frequency": float(group["boundary_solution"].mean()),
                 "fit_failure_frequency": float((~group["converged"]).mean()),
                 "covariance_failure_frequency": float((~group["covariance_ok"]).mean()),
+                "finite_limit_zero_boundary_frequency": zero_limit_frequency,
+                "local_limit_decay_correlation_median": (
+                    float(correlations.median()) if len(correlations) else np.nan
+                ),
+                "bootstrap_limit_decay_correlation": empirical_correlation,
             })
     return pd.DataFrame(rows)
 

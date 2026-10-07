@@ -4,6 +4,12 @@
 
 各要求では異なる2頂点を一様に選び、現在の有効辺上の最短距離が予算 `C` 以下なら、全最短経路から一様に選んだ1本をまとめて削除します。シミュレーションは測定結果、run要約、条件manifest、および必要に応じて辺削除トレースをCSVへ出力します。Python側では入力検証、要求単位・辺単位の疑似臨界事象、転移幅、bootstrap、FSSを扱います。
 
+## 現在参照する成果物
+
+[Phase 0〜16の最終研究監査](docs/FINAL_RESEARCH_AUDIT.md)はPASS WITH CORRECTIONS。正式値・主張範囲・全問題・最終テストはこの報告を参照する。Java182件、Python180件がPASSし、保護原本1,895ファイルのSHA-256は不変。C=2の普遍性とUNBOUNDEDの転移次数は未確定として記述する。
+
+研究の最新段階はUNBOUNDED v7（L=384、20 runs）である。raw・manifest・事前登録原本は保持し、解析監査で訂正した区間は別ディレクトリに保存している。卒論では[解析監査の補正記録と成果物台帳](docs/ANALYSIS_AUDIT_CORRECTIONS.md)に記載したCORRECTED成果物を使う。旧bootstrap CSV・区間図はSUPERSEDED、v1〜v7の当時の記述と事前予測はHISTORICALとして区別する。点fitと実験事実が現在も有効な行はCURRENTである。
+
 詳細は次を参照してください。
 
 - [設計と実装](docs/DESIGN.md)
@@ -53,6 +59,8 @@ python -m pytest analysis/tests
 ```
 
 ## 再現用の実行コマンド
+
+以下は研究の実行手順・当時の生成先の記録である。現在の卒論用区間は上記CORRECTED成果物を参照する。完成済み実験・旧解析の保存先へ再実行して上書きせず、追加の再解析には新しい出力先を使う。
 
 小規模な smoke 走査:
 

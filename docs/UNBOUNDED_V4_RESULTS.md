@@ -1,5 +1,10 @@
 # UNBOUNDED v4: L=192段階実験と漸近モデル再評価
 
+> **HISTORICAL / CURRENT**：本文はL≤192時点の研究記録。保存された観測・主点fitはそのサイズ範囲でCURRENTであり、現在の全サイズ結論とは区別する。旧fit bootstrap区間はSUPERSEDED、Phase 4F訂正区間が現行の不確実性評価である。
+
+> **bootstrap訂正（Phase 4F、2026-10-07）**：本文のモデルfit bootstrap CI、区間由来の予測・被覆・densityは当時の出力である。主fitと異なる推定器を使っていたため、正式な不確実性評価は[UNBOUNDED_BOOTSTRAP_CORRECTION.md](UNBOUNDED_BOOTSTRAP_CORRECTION.md)と`app/out/unbounded-v4-bootstrap-corrected/`を参照する。raw観測、単一サイズの直接再標本化CI、主fit・AICc/BIC・LOO・固定点予測・事前登録原本はこの訂正で変更しない。歴史的出力は保存する。
+
+
 ## 1. 目的と既存結果の保持
 
 scaling-v3では、UNBOUNDEDの最大request jumpについてzero-logがAICc、BIC、LOOでわずかに優勢だった一方、有限値漸近モデルのbootstrap区間は0近傍から約0.29まで広く、転移次数は識別できなかった。v4では既存のscaling-v2/v3データを変更せず、UNBOUNDEDの`L=192`だけを追加し、モデル識別力がどれだけ増すかを調べた。C=1、C=2、L=256の本計算は行っていない。
@@ -26,6 +31,8 @@ scaling-v3では、UNBOUNDEDの最大request jumpについてzero-logがAICc、B
 | benchmark | 3 | 1.476 / 1.593 / 1.646 / 1.657 | 2,464 | 0.307 MB |
 | pilot | 17 | 1.173 / 1.440 / 1.422 / 1.742 | 13,441 | 1.656 MB |
 | main | 30 | 1.302 / 1.436 / 1.421 / 1.672 | 23,493 | 2.899 MB |
+
+表の時間medianはJava進捗表示と同じlower median（偶数runでは中央2値の小さい方）である。main30 runの通常の中央2値平均medianは1.430秒となる。
 
 本計算50 runの計測時間合計は約72.4秒（Gradle起動・集約を除く）で、全runが`TRANSITION_WINDOW_COMPLETE`だった。追加実験全体（auditを含む）は228ファイル、約10.6 MBである。全manifestで欠損、seed重複、run欠落、14列違反、不変条件違反はなかった。最大観測heap使用量は約306 MB、committed heapは512 MBだった。
 
@@ -66,13 +73,15 @@ finite-log:   Y(L) = Y_inf + a / (log L)^q
 | zero-log | 0固定 | 0.25161 | **-96.72** | **-97.83** | **0.00655** |
 | finite-log | 0.20189 | 0.67844 | -92.86 | -95.95 | 0.00666 |
 
-AICc、BIC、LOOはいずれもzero-logを最良とするが、差は決定的ではない。有限powerの`Y_inf` bootstrap 95% percentile区間は約`[0.000006, 0.2973]`、有限logは`[0.0000004, 0.2923]`である。下限が形式上0より大きいのは`Y_inf >= 0`という境界付きfitと有限bootstrap標本によるもので、物理的にゼロを排除した証拠とは解釈しない。最大相関は0.96–1.00と高く、`Y_inf`、振幅、減衰指数の識別は不安定である。
+AICc、BIC、LOOはいずれもzero-logを最良とするが、差は決定的ではない。有限powerの`Y_inf` bootstrap 95% percentile区間は約`[0.000006, 0.2973]`、有限logは`[0.0000004, 0.2923]`である。下限が形式上0より大きいのは`Y_inf >= 0`という境界付きfitと有限bootstrap標本によるもので、物理的にゼロを排除した証拠とは解釈しない。この段落の旧区間はHISTORICAL / SUPERSEDEDである。現行のfinite極限区間はpower `[6.063111e-19, 0.2972719368]`、log `[1.302514e-21, 0.2922683954]`で、[訂正CSV](../app/out/unbounded-v4-bootstrap-corrected/unbounded_bootstrap_intervals.csv)を参照する。最大相関は0.96–1.00と高く、`Y_inf`、振幅、減衰指数の識別は不安定である。
 
 L_minを変えると有限powerの`Y_inf`はほぼ0から0.282、有限logはほぼ0から0.277まで動く。zeroモデルの有効指数も動く。これは都合のよいfitだけを採用できない主要な不安定性である。
 
 ### transition width
 
 `delta_p`ではzero-powerがAICc最良（-82.53）、zero-logとの差は0.72、減衰指数はそれぞれ0.0149、0.0331と非常に小さい。有限モデルの主fitは`Y_inf≈0`の境界解である一方、bootstrapは上限境界に近い指数と`Y_inf≈0.29`へ頻繁に移り、境界頻度はpower 0.596、log 0.900だった。したがってtransition widthの漸近値は最大jump以上に不安定である。`delta_t/N^2`と`std(p_mid)`はzero-powerが情報量基準で優勢だが、これも有限値モデルを一般に排除するものではない。
+
+訂正（Phase 4F）：上記のbootstrap移動・境界頻度は旧推定器の当時の結果であり、負振幅など主モデル範囲外解を含む。この挙動を宣言した主モデル内の不確実性とする上記解釈を撤回する。訂正bootstrapは主fitと同一の正振幅・bounded推定器を使い、δpの有限極限は数値的ゼロ境界へ集中する。ただし境界集中から漸近ゼロが証明されたとはしない。小さい主減衰指数とL_min感度は別の限界として残る。正式区間は[訂正記録](UNBOUNDED_BOOTSTRAP_CORRECTION.md)を参照。
 
 ## 6. scaling-v3から変わったこと
 
@@ -87,6 +96,8 @@ L=256における最大jumpの予測（観測ではない）はzero-power 0.2761
 L=256は自動実行していない。v3の実測外挿は約3.26秒/run、20 runで約65秒、50 runで約163秒、100 runで約326秒であり、容量も現実的と予測される。ただしこれは観測ではない。次の推奨は、まずUNBOUNDED L=256を20 runの段階pilotとして実行し、モデル間予測差に対するSEMと整合性を再評価することである。反対に、L=192を100 runへ増やす優先度は低い。
 
 ## 8. 再現手順と成果物
+
+以下は当時の生成コマンド（HISTORICAL）である。完成済み実験・解析出力へ再実行して上書きしない。現行訂正成果物は冒頭の参照先を使用する。
 
 ```powershell
 .\gradlew.bat run --args="--unbounded-l192-benchmark"
@@ -103,7 +114,7 @@ CSVと15図は`app/out/unbounded-v4/main50/`、生データは`app/out/unbounded
 
 - L=192は50 runで、L<=64の200 run、L=96/128の400 runより少ない。
 - 観測量のサイズ間平均に対する非線形fitであり、誤差の異分散やサイズ間系統誤差を完全にはモデル化していない。
-- bootstrapの高速fitと主multi-start fitは数値経路が異なる。主推定・診断はmulti-start、区間はrun再標本化の感度評価として読む。
+- 訂正（Phase 4F）：当時の高速bootstrapと主multi-start fitには、数値経路だけでなくobjective・残差尺度・parameter boundsの違いがあった。旧区間を主fitの正式CIとして使用できない。訂正版は両者で同じ主fit helperを使用する。[訂正記録](UNBOUNDED_BOOTSTRAP_CORRECTION.md)を参照。
 - 有限モデルの境界と高相関により、通常の共分散近似は楽観的になり得る。
 - logモデルは経験的な遅い収束候補であり、厳密な理論導出ではない。
 - 3 seedの停止監査は完全な証明ではない。

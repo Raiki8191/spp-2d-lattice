@@ -20,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from analysis.io import load_sweep
+from analysis.request_event import require_request_measurements
 from analysis.request_fss import write_fss_summaries
 from analysis.scaling_fit import fit_scaling
 from analysis.validation import validate_sweep
@@ -33,6 +34,7 @@ def analyze_scaling(
 ) -> list[Path]:
     started = time.perf_counter()
     manifest, results = load_sweep(manifest_path)
+    require_request_measurements(manifest)
     validation = validate_sweep(manifest, results)
     root = (
         Path(output_directory)

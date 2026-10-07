@@ -19,7 +19,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize_scalar
 
 from analysis.correction_fitting import (
     OMEGA_FIXED_VALUES, corrected_power, corrected_shift, fit_bounded_multistart,
@@ -42,6 +41,22 @@ OBSERVABLES = {
 }
 FINITE_OBSERVABLES = {key: OBSERVABLES[key] for key in
                       ("P_before", "P_after", "S_before", "S_after", "std_p_mid")}
+
+# Keep the historical v3 point-estimator specification separate from v4-v7.
+# In particular, these starts and the fitter's default maxfev=5_000 must also
+# be used for every v3 UNBOUNDED bootstrap sample.
+UNBOUNDED_MODEL_SPECS = {
+    "zero_power": (pure_power, tuple((1, q) for q in (.05, .2, .5, 1, 2)),
+                   ((1e-12, .001), (10, 5)), ("amplitude", "decay_exponent")),
+    "finite_power": (constant_power,
+                     tuple((limit, 1, q) for limit in (0, .1, .3) for q in (.05, .2, .5, 1)),
+                     ((0, 1e-12, .001), (1, 10, 5)), ("limit", "amplitude", "decay_exponent")),
+    "zero_log": (logarithmic_zero, tuple((1, q) for q in (.1, .5, 1, 2, 4)),
+                 ((1e-12, .001), (10, 10)), ("amplitude", "decay_exponent")),
+    "finite_log": (logarithmic_limit,
+                   tuple((limit, 1, q) for limit in (0, .1, .3) for q in (.1, .5, 1, 2)),
+                   ((0, 1e-12, .001), (1, 10, 10)), ("limit", "amplitude", "decay_exponent")),
+}
 
 
 def run_analysis(
@@ -210,27 +225,7 @@ def shift_fits(combined: pd.DataFrame) -> pd.DataFrame:
             if L_min != 8:
                 continue
             for omega in OMEGA_FIXED_VALUES:
-                if label == "C=1":
-                    function = lambda L, a, q, b, w=omega: corrected_shift(L, .5, a, q, b, w)
-                    fit = fit_bounded_multistart(
-                        function, x, y,
-                        ((a, q, b) for a in (-.5, .5) for q in (.5, .75, 1) for b in (-1, 1)),
-                        ((-10, .05, -20), (10, 4, 20)),
-                        ("amplitude", "inverse_nu", "correction"),
-                        model=f"corrected_shift_pc_0.5_omega_{omega:g}",
-                    )
-                    fit.update(pc=.5, omega=omega)
-                else:
-                    function = lambda L, pc, a, q, b, w=omega: corrected_shift(L, pc, a, q, b, w)
-                    fit = fit_bounded_multistart(
-                        function, x, y,
-                        ((pc, a, q, b) for pc in (.45, .5, .55) for a in (-.5, .5)
-                         for q in (.5, .75, 1) for b in (-1, 1)),
-                        ((0, -10, .05, -20), (1, 10, 4, 20)),
-                        ("pc", "amplitude", "inverse_nu", "correction"),
-                        model=f"corrected_shift_free_pc_omega_{omega:g}",
-                    )
-                    fit["omega"] = omega
+                fit = fit_corrected_shift_fixed_omega(x, y, label=label, omega=omega)
                 rows.append(_fit_row(fit, condition_label=label, observable="p_mid",
                                      source_column="p_mid_mean", exponent_sign=1, L_min=L_min,
                                      used_L=_used_l(subset)))
@@ -258,34 +253,66 @@ def shift_fits(combined: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+
+def fit_corrected_shift_fixed_omega(
+    L: np.ndarray, y: np.ndarray, *, label: str, omega: float,
+) -> dict[str, object]:
+    """Use the point-estimator specification for fixed-omega shift fits."""
+    if label == "C=1":
+        function = lambda L, a, q, b: corrected_shift(L, .5, a, q, b, omega)
+        fit = fit_bounded_multistart(
+            function, L, y,
+            ((a, q, b) for a in (-.5, .5) for q in (.5, .75, 1) for b in (-1, 1)),
+            ((-10, .05, -20), (10, 4, 20)),
+            ("amplitude", "inverse_nu", "correction"),
+            model=f"corrected_shift_pc_0.5_omega_{omega:g}",
+        )
+        fit.update(pc=.5, omega=omega)
+    elif label == "C=2":
+        function = lambda L, pc, a, q, b: corrected_shift(L, pc, a, q, b, omega)
+        fit = fit_bounded_multistart(
+            function, L, y,
+            ((pc, a, q, b) for pc in (.45, .5, .55) for a in (-.5, .5)
+             for q in (.5, .75, 1) for b in (-1, 1)),
+            ((0, -10, .05, -20), (1, 10, 4, 20)),
+            ("pc", "amplitude", "inverse_nu", "correction"),
+            model=f"corrected_shift_free_pc_omega_{omega:g}",
+        )
+        fit["omega"] = omega
+    else:
+        raise ValueError("fixed-omega finite shift requires C=1 or C=2")
+    return fit
+
+def fit_unbounded_models(L: np.ndarray, y: np.ndarray) -> list[dict[str, object]]:
+    """Apply the unchanged v3 original-scale bounded multistart estimator."""
+    return [
+        fit_bounded_multistart(function, L, y, starts, bounds, names, model=model)
+        for model, (function, starts, bounds, names) in UNBOUNDED_MODEL_SPECS.items()
+    ]
+
+
 def unbounded_fits(combined: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     ub = combined.loc[combined["condition_label"] == "UNBOUNDED"].sort_values("L")
     rows, loo_rows, predictions = [], [], []
-    specs = {
-        "zero_power": (pure_power, tuple((1, q) for q in (.05, .2, .5, 1, 2)), ((1e-12, .001), (10, 5)), ("amplitude", "decay_exponent")),
-        "finite_power": (constant_power, tuple((limit, 1, q) for limit in (0, .1, .3) for q in (.05, .2, .5, 1)), ((0, 1e-12, .001), (1, 10, 5)), ("limit", "amplitude", "decay_exponent")),
-        "zero_log": (logarithmic_zero, tuple((1, q) for q in (.1, .5, 1, 2, 4)), ((1e-12, .001), (10, 10)), ("amplitude", "decay_exponent")),
-        "finite_log": (logarithmic_limit, tuple((limit, 1, q) for limit in (0, .1, .3) for q in (.1, .5, 1, 2)), ((0, 1e-12, .001), (1, 10, 10)), ("limit", "amplitude", "decay_exponent")),
-    }
     for observable, column in (("delta_P_request", "delta_P_max_mean"), ("transition_delta_p", "delta_p_mean")):
         for L_min in (8, 16, 32):
             subset = ub.loc[(ub["L"] >= L_min) & (ub[column] > 0)]
-            for model, (function, starts, bounds, names) in specs.items():
-                fit = fit_bounded_multistart(function, subset["L"], subset[column], starts, bounds, names, model=model)
+            for fit in fit_unbounded_models(subset["L"], subset[column]):
                 rows.append(_fit_row(fit, condition_label="UNBOUNDED", observable=observable,
                                      source_column=column, exponent_sign=1, L_min=L_min, used_L=_used_l(subset)))
         full = ub.loc[ub[column] > 0]
         for omitted in full["L"]:
             subset = full.loc[full["L"] != omitted]
-            for model, (function, starts, bounds, names) in specs.items():
-                fit = fit_bounded_multistart(function, subset["L"], subset[column], starts, bounds, names, model=model)
+            for fit in fit_unbounded_models(subset["L"], subset[column]):
+                function, _, _, names = UNBOUNDED_MODEL_SPECS[fit["model"]]
                 prediction = function(np.array([omitted], float), *[fit.get(name, np.nan) for name in names])[0] if fit["converged"] else np.nan
                 loo_rows.append({**_fit_row(fit, observable=observable, source_column=column,
                                             exponent_sign=1, L_min=int(subset["L"].min()), used_L=_used_l(subset)),
                                  "omitted_L": int(omitted), "observed": float(full.loc[full["L"] == omitted, column].iloc[0]),
                                  "predicted": prediction, "prediction_error": prediction - float(full.loc[full["L"] == omitted, column].iloc[0])})
-        for model, (function, starts, bounds, names) in specs.items():
-            fit = fit_bounded_multistart(function, full["L"], full[column], starts, bounds, names, model=model)
+        for fit in fit_unbounded_models(full["L"], full[column]):
+            model = fit["model"]
+            function, _, _, names = UNBOUNDED_MODEL_SPECS[model]
             for target in (160, 192, 256):
                 value = function(np.array([target], float), *[fit.get(name, np.nan) for name in names])[0] if fit["converged"] else np.nan
                 predictions.append({"observable": observable, "model": model, "target_L": target,
@@ -296,7 +323,9 @@ def unbounded_fits(combined: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, 
 
 
 def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: pd.DataFrame,
-                      combined: pd.DataFrame, *, samples: int, seed: int) -> pd.DataFrame:
+                      combined: pd.DataFrame, *, samples: int, seed: int,
+                      unbounded_only: bool = False,
+                      finite_primary_only: bool = False) -> pd.DataFrame:
     """Bootstrap primary L_min=8 fits from run-level observations.
 
     Finite-condition bootstrap fits deliberately call the same bounded,
@@ -304,8 +333,18 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
     output used log-log OLS for the bootstrap ``simple_power`` rows while the
     point estimate used original-scale nonlinear least squares.  Giving those
     different estimators the same label produced incomparable point estimates
-    and confidence intervals.
+    and confidence intervals.  The UNBOUNDED branch likewise calls the exact
+    estimator used by :func:`unbounded_fits`.
+
+    ``unbounded_only`` skips finite-condition fits, but still consumes their
+    original bootstrap draws in their original order.  It can therefore
+    produce separate UNBOUNDED corrections without changing their samples or
+    regenerating the already corrected finite-C products.
+    finite_primary_only emits finite-condition fits with their unchanged draws,
+    omitting UNBOUNDED and joint/shift fits for an affected-only correction.
     """
+    if unbounded_only and finite_primary_only:
+        raise ValueError("unbounded_only and finite_primary_only are mutually exclusive")
     rng = np.random.default_rng(seed)
     rows: list[dict[str, object]] = []
     metrics = {"P_before": (events, "P_before", -1), "P_after": (events, "P_after", -1),
@@ -313,6 +352,8 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
                "std_p_mid": (events, "p_mid", -1), "delta_P_request": (events, "delta_P_max", -1),
                "transition_delta_p": (widths, "delta_p", -1)}
     for label in ("C=1", "C=2", "UNBOUNDED"):
+        if finite_primary_only and label == "UNBOUNDED":
+            continue
         for observable, (frame, column, sign) in metrics.items():
             source = frame.loc[((frame["budget_mode"] == "UNBOUNDED") if label == "UNBOUNDED" else
                                 ((frame["budget_mode"] == "FINITE") & (frame["C"] == int(label[-1]))))]
@@ -325,6 +366,8 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
                     value = float(np.std(draw, ddof=1)) if observable == "std_p_mid" else float(np.nanmean(draw))
                     values.append((L, value))
                 Ls, ys = map(np.asarray, zip(*values))
+                if unbounded_only and label != "UNBOUNDED":
+                    continue
                 if label == "UNBOUNDED" and observable in ("delta_P_request", "transition_delta_p"):
                     models = _bootstrap_ub_models(Ls, ys)
                 elif label != "UNBOUNDED":
@@ -343,7 +386,7 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
                 for fit in models:
                     exponent = fit.get("exponent", fit.get("decay_exponent", np.nan))
                     reported_exponent = exponent if label == "UNBOUNDED" else sign * exponent
-                    rows.append({"sample": sample, "condition_label": label, "observable": observable,
+                    row = {"sample": sample, "condition_label": label, "observable": observable,
                                  "source_column": column,
                                  "estimator": _bootstrap_estimator_name(label, observable),
                                  "L_min": int(np.min(Ls)), "used_L": ";".join(str(int(value)) for value in Ls),
@@ -352,8 +395,22 @@ def bootstrap_primary(events: pd.DataFrame, widths: pd.DataFrame, corrections: p
                                  "failure": fit.get("failure", ""), "exponent": reported_exponent,
                                  "limit": fit.get("limit", 0.0), "amplitude": fit.get("amplitude", np.nan),
                                  "omega": fit.get("omega", np.nan), "correction": fit.get("correction", np.nan),
-                                 "boundary_solution": fit["boundary_solution"]})
-    rows.extend(_bootstrap_joint_and_shift(events, samples=samples, rng=rng))
+                                  "boundary_solution": fit["boundary_solution"]}
+                    if label == "UNBOUNDED":
+                        for diagnostic in (
+                            "covariance_ok", "admissible", "rss", "aicc", "bic",
+                            "start_count", "converged_start_count", "point_count", "parameter_count",
+                            "max_parameter_correlation", "amplitude_standard_error",
+                            "decay_exponent_standard_error", "limit_standard_error",
+                        ):
+                            row[diagnostic] = fit.get(diagnostic, np.nan)
+                        row["zero_limit_boundary"] = (
+                            fit["converged"] and fit["model"].startswith("finite_")
+                            and fit.get("limit", np.inf) <= 1e-8
+                        )
+                    rows.append(row)
+    if not (unbounded_only or finite_primary_only):
+        rows.extend(_bootstrap_joint_and_shift(events, samples=samples, rng=rng))
     return pd.DataFrame(rows)
 
 
@@ -365,6 +422,8 @@ def attach_prediction_intervals(predictions: pd.DataFrame, bootstrap: pd.DataFra
         samples = bootstrap.loc[(bootstrap["condition_label"] == "UNBOUNDED") &
                                 (bootstrap["observable"] == row["observable"]) &
                                 (bootstrap["model"] == row["model"])]
+        if "converged" in samples:
+            samples = samples.loc[samples["converged"].astype(bool)]
         if samples.empty:
             continue
         L = float(row["target_L"]); exponent = samples["exponent"].to_numpy(float)
@@ -395,81 +454,84 @@ def _bootstrap_joint_and_shift(events: pd.DataFrame, *, samples: int,
     rows: list[dict[str, object]] = []
     finite = events.loc[(events["budget_mode"] == "FINITE") & events["C"].isin([1, 2])]
     for sample in range(samples):
-        aggregates: dict[tuple[int, int], pd.DataFrame] = {}
+        aggregates: dict[int, pd.DataFrame] = {}
         for C in (1, 2):
             pieces = []
             for L, group in finite.loc[finite["C"] == C].groupby("L", sort=True):
                 pieces.append(group.iloc[rng.integers(0, len(group), len(group))].assign(_L=L))
-            aggregates[(C, sample)] = pd.concat(pieces, ignore_index=True)
-        for observable, column, sign in (("P_before", "P_before", -1), ("P_after", "P_after", -1),
-                                          ("S_before", "S_before", 1), ("S_after", "S_after", 1),
-                                          ("std_p_mid", "p_mid", -1)):
-            series = []
-            for C in (1, 2):
-                grouped = aggregates[(C, sample)].groupby("_L")[column]
-                values = grouped.std(ddof=1) if observable == "std_p_mid" else grouped.mean()
-                series.append((values.index.to_numpy(float), values.to_numpy(float)))
-            independent = [_quick_power_fit(*item)["exponent"] for item in series]
-            log_L = np.log(np.concatenate([series[0][0], series[1][0]]))
-            log_y = np.log(np.concatenate([series[0][1], series[1][1]]))
-            indicator = np.concatenate([np.zeros(len(series[0][0])), np.ones(len(series[1][0]))])
-            design = np.column_stack((np.ones(len(log_L)), indicator, log_L))
-            shared = float(np.linalg.lstsq(design, log_y, rcond=None)[0][2])
-            corrected = _quick_joint_corrected_exponent(series, omega=1.0)
-            for model, exponent in (("U1_C1", independent[0]), ("U1_C2", independent[1]),
-                                    ("U2_shared_exponent", shared),
-                                    ("U3_shared_exponent_omega_fixed_1", corrected)):
-                rows.append({"sample": sample, "condition_label": "C1+C2", "observable": observable,
-                             "model": model, "exponent": sign * exponent, "limit": np.nan,
-                             "amplitude": np.nan, "omega": np.nan, "correction": np.nan,
-                             "boundary_solution": abs(exponent) > 4.999})
-        for C in (1, 2):
-            grouped = aggregates[(C, sample)].groupby("_L")["p_mid"].mean()
-            L, y = grouped.index.to_numpy(float), grouped.to_numpy(float)
-            pc_fixed = .5 if C == 1 else None
-            q, pc = _quick_corrected_shift(L, y, omega=1.0, fixed_pc=pc_fixed)
-            rows.append({"sample": sample, "condition_label": f"C={C}", "observable": "p_mid_shift",
-                         "model": "corrected_shift_omega_fixed_1", "exponent": q, "limit": pc,
-                         "amplitude": np.nan, "omega": 1.0, "correction": np.nan,
-                         "boundary_solution": q < .0011 or q > 3.999})
+            aggregates[C] = pd.concat(pieces, ignore_index=True)
+        rows.extend(fit_joint_shift_statistics(joint_shift_statistics(aggregates), sample=sample))
     return rows
 
 
-def _quick_joint_corrected_exponent(series: list[tuple[np.ndarray, np.ndarray]], omega: float) -> float:
-    all_L = np.concatenate([item[0] for item in series])
-    all_y = np.concatenate([item[1] for item in series])
-    condition = np.concatenate([np.full(len(item[0]), index) for index, item in enumerate(series)])
-    log_design = np.column_stack((np.ones(len(all_L)), condition, np.log(all_L)))
-    simple = float(np.linalg.lstsq(log_design, np.log(all_y), rcond=None)[0][-1])
-    def rss(exponent: float) -> float:
-        total = 0.0
-        for L, y in series:
-            design = np.column_stack((L**exponent, L**(exponent-omega)))
-            coefficients = np.linalg.lstsq(design, y, rcond=None)[0]
-            prediction = design @ coefficients
-            correction = coefficients[1]/coefficients[0] if coefficients[0] else np.inf
-            invalid = coefficients[0] <= 0 or abs(correction) > 20 or np.any(prediction <= 0)
-            total += float(np.sum((y-prediction)**2) + (1e6 if invalid else 0))
-        return total
-    lower, upper = max(-5.0, simple-.75), min(5.0, simple+.75)
-    grid = np.linspace(lower, upper, 121); best = int(np.argmin([rss(value) for value in grid]))
-    return float(minimize_scalar(rss, bounds=(grid[max(0,best-1)], grid[min(120,best+1)]), method="bounded").x)
+def joint_shift_statistics(
+    aggregates: dict[int, pd.DataFrame],
+) -> dict[str, list[tuple[np.ndarray, np.ndarray]]]:
+    """Aggregate the original joint run draws without changing their pairing."""
+    statistics = {}
+    for observable, column in (("P_before", "P_before"), ("P_after", "P_after"),
+                               ("S_before", "S_before"), ("S_after", "S_after"),
+                               ("std_p_mid", "p_mid"), ("p_mid_shift", "p_mid")):
+        series = []
+        for C in (1, 2):
+            grouped = aggregates[C].groupby("_L")[column]
+            values = grouped.std(ddof=1) if observable == "std_p_mid" else grouped.mean()
+            series.append((values.index.to_numpy(float), values.to_numpy(float)))
+        statistics[observable] = series
+    return statistics
 
 
-def _quick_corrected_shift(L: np.ndarray, y: np.ndarray, *, omega: float,
-                           fixed_pc: float | None) -> tuple[float, float]:
-    def solve(q: float) -> tuple[float, np.ndarray]:
-        columns = [L**-q, L**(-q-omega)]
-        if fixed_pc is None:
-            design = np.column_stack((np.ones(len(L)), *columns)); target = y
-        else:
-            design = np.column_stack(columns); target = y-fixed_pc
-        coefficients = np.linalg.lstsq(design, target, rcond=None)[0]
-        return float(np.sum((target-design @ coefficients)**2)), coefficients
-    optimized = minimize_scalar(lambda q: solve(q)[0], bounds=(.001, 4), method="bounded")
-    _, coefficients = solve(float(optimized.x))
-    pc = float(coefficients[0]) if fixed_pc is None else fixed_pc
-    return float(optimized.x), pc
+def fit_joint_shift_statistics(
+    statistics: dict[str, list[tuple[np.ndarray, np.ndarray]]], *, sample: int,
+) -> list[dict[str, object]]:
+    """Refit joint/shift samples with the identical bounded point estimators.
+
+    Historical bootstrap labels are retained for comparison. U1_C1 and U1_C2
+    report the two exponents from U1_independent; U2 reports the shared exponent
+    with independent free correction exponents; U3 has fixed omega=1.
+    """
+    rows = []
+    selected = {"U1_independent", "U2_shared_exponent", "U3_shared_exponent_omega_1"}
+    for observable, sign in (("P_before", -1), ("P_after", -1), ("S_before", 1),
+                             ("S_after", 1), ("std_p_mid", -1)):
+        series = statistics[observable]
+        fits = {fit["model"]: fit for fit in fit_universality_models(
+            *series[0], *series[1], fixed_omegas=(1.0,), include_models=selected,
+        )}
+        for model, source, parameter in (
+            ("U1_C1", "U1_independent", "exponent_c1"),
+            ("U1_C2", "U1_independent", "exponent_c2"),
+            ("U2_shared_exponent", "U2_shared_exponent", "exponent"),
+            ("U3_shared_exponent_omega_fixed_1", "U3_shared_exponent_omega_1", "exponent"),
+        ):
+            fit = fits[source]
+            rows.append(_joint_shift_bootstrap_row(
+                fit, sample=sample, label="C1+C2", observable=observable,
+                model=model, exponent=sign*fit.get(parameter, np.nan), limit=np.nan,
+                used_L=";".join(str(int(L)) for L in series[0][0]),
+            ))
+    for C, (L, y) in enumerate(statistics["p_mid_shift"], start=1):
+        fit = fit_corrected_shift_fixed_omega(L, y, label=f"C={C}", omega=1.0)
+        rows.append(_joint_shift_bootstrap_row(
+            fit, sample=sample, label=f"C={C}", observable="p_mid_shift",
+            model="corrected_shift_omega_fixed_1",
+            exponent=fit.get("inverse_nu", np.nan), limit=fit.get("pc", np.nan),
+            used_L=";".join(str(int(size)) for size in L),
+        ))
+    return rows
+
+
+def _joint_shift_bootstrap_row(
+    fit: dict[str, object], *, sample: int, label: str, observable: str,
+    model: str, exponent: float, limit: float, used_L: str,
+) -> dict[str, object]:
+    row = {key: value for key, value in fit.items()
+           if key not in ("covariance", "prediction", "residuals")}
+    row.update(sample=sample, condition_label=label, observable=observable,
+               model=model, source_point_model=fit["model"], exponent=exponent,
+               limit=limit, estimator="bounded_original_scale_nonlinear_least_squares",
+               L_min=int(used_L.split(";")[0]), used_L=used_L)
+    return row
 
 
 def _selected_omega(corrections: pd.DataFrame, label: str, observable: str) -> float:
@@ -487,28 +549,8 @@ def _quick_power_fit(L: np.ndarray, y: np.ndarray) -> dict[str, object]:
 
 
 def _bootstrap_ub_models(L: np.ndarray, y: np.ndarray) -> list[dict[str, object]]:
-    log_slope, log_amplitude = np.polyfit(np.log(L), np.log(y), 1)
-    loglog_slope, loglog_amplitude = np.polyfit(np.log(np.log(L)), np.log(y), 1)
-    output = [
-        {"model": "zero_power", "converged": True, "amplitude": math.exp(log_amplitude),
-         "decay_exponent": -log_slope, "limit": 0.0, "boundary_solution": False},
-        {"model": "zero_log", "converged": True, "amplitude": math.exp(loglog_amplitude),
-         "decay_exponent": -loglog_slope, "limit": 0.0, "boundary_solution": False},
-    ]
-    for model, basis in (("finite_power", lambda q: L**-q),
-                         ("finite_log", lambda q: np.log(L)**-q)):
-        def solve(q: float) -> tuple[float, np.ndarray]:
-            design = np.column_stack((np.ones(len(L)), basis(q)))
-            coefficients = np.linalg.lstsq(design, y, rcond=None)[0]
-            penalty = 1e6 * min(coefficients[0], 0) ** 2
-            return float(np.sum((y-design @ coefficients)**2) + penalty), coefficients
-        optimized = minimize_scalar(lambda q: solve(q)[0], bounds=(.001, 10), method="bounded")
-        _, coefficients = solve(float(optimized.x))
-        output.append({"model": model, "converged": optimized.success,
-                       "limit": max(float(coefficients[0]), 0.0), "amplitude": float(coefficients[1]),
-                       "decay_exponent": float(optimized.x),
-                       "boundary_solution": float(coefficients[0]) <= 1e-8})
-    return output
+    """Use the point estimator, including its bounds and fit diagnostics."""
+    return fit_unbounded_models(L, y)
 
 
 def summarize_bootstrap(frame: pd.DataFrame) -> pd.DataFrame:
@@ -532,7 +574,7 @@ def summarize_bootstrap(frame: pd.DataFrame) -> pd.DataFrame:
 
 def _bootstrap_estimator_name(condition_label: str, observable: str) -> str:
     if condition_label == "UNBOUNDED":
-        return "legacy_unbounded_profile_fit"
+        return "bounded_nonlinear_least_squares_original_scale"
     if observable in FINITE_OBSERVABLES:
         return "bounded_nonlinear_least_squares_original_scale"
     return "log_log_ordinary_least_squares"
@@ -582,6 +624,33 @@ def fit_stability_summary(*tables: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _plot_shared_exponent_series(axis: plt.Axes, data: pd.DataFrame) -> None:
+    """Draw both independent U1 exponents and each shared-exponent series."""
+    for model, group in data.groupby("model"):
+        if model == "U1_independent":
+            for suffix, label in (("c1", "C=1"), ("c2", "C=2")):
+                column = f"scaling_exponent_{suffix}"
+                available = group.loc[group[column].notna()]
+                axis.plot(available["L_min"], available[column], marker="o",
+                          label=f"{model} {label}")
+        else:
+            axis.plot(group["L_min"], group["scaling_exponent"], marker="o", label=model)
+
+
+def _plot_finite_point_curves(axis: plt.Axes, candidates: pd.DataFrame, label: str) -> None:
+    """Render selected simple (including fixed-exponent) and correction fits."""
+    for _, fit in candidates.iterrows():
+        grid = np.geomspace(8, 128, 200)
+        if fit["model"].startswith("simple_power"):
+            prediction = simple_power(grid, fit["amplitude"], fit["exponent"])
+        elif "omega" in fit["model"]:
+            prediction = corrected_power(grid, fit["amplitude"], fit["exponent"],
+                                         fit["correction"], fit["omega"])
+        else:
+            continue
+        axis.plot(grid, prediction, label=f"{label} {fit['model']}")
+
+
 def create_figures(combined: pd.DataFrame, correction: pd.DataFrame, universality: pd.DataFrame,
                    shifts: pd.DataFrame, unbounded: pd.DataFrame, loo: pd.DataFrame,
                    extrapolation: pd.DataFrame, bootstrap: pd.DataFrame,
@@ -606,12 +675,7 @@ def create_figures(combined: pd.DataFrame, correction: pd.DataFrame, universalit
             ax.scatter(data["L"], data[column], label=f"{label} data")
             candidates = correction.loc[(correction["condition_label"] == label) & (correction["observable"] == observable) &
                                         (correction["L_min"] == 8) & correction["converged"]].sort_values("aicc")
-            for _, fit in candidates.head(2).iterrows():
-                grid = np.geomspace(8, 128, 200)
-                if fit["model"] == "simple_power": pred = simple_power(grid, fit["amplitude"], fit["exponent"])
-                elif "omega" in fit["model"]: pred = corrected_power(grid, fit["amplitude"], fit["exponent"], fit["correction"], fit["omega"])
-                else: continue
-                ax.plot(grid, pred, label=f"{label} {fit['model']}")
+            _plot_finite_point_curves(ax, candidates.head(2), label)
         ax.set(xscale="log", yscale="log", xlabel="linear size L", ylabel=observable,
                title=f"Simple and correction-to-scaling fits: {observable}")
         ax.legend(fontsize=7)
@@ -629,9 +693,7 @@ def create_figures(combined: pd.DataFrame, correction: pd.DataFrame, universalit
     # Shared universality exponent.
     fig, ax = plt.subplots(figsize=(7.2, 4.8), constrained_layout=True)
     data = universality.loc[(universality["observable"] == "P_before") & universality["converged"]]
-    for model, group in data.groupby("model"):
-        column = "scaling_exponent" if "scaling_exponent" in group else "scaling_exponent_c1"
-        if column in group: ax.plot(group["L_min"], group[column], marker="o", label=model)
+    _plot_shared_exponent_series(ax, data)
     ax.axhline(THEORY_BETA_OVER_NU, color="black", linestyle="--", label="5/48")
     ax.set(xlabel=r"minimum size $L_{min}$", ylabel=r"$\beta/\nu$", title="C=1/C=2 joint P_before fits")
     ax.legend(fontsize=7); paths.append(_save(fig, directory / "c1_c2_shared_exponent.png"))

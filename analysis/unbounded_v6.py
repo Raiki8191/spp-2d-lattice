@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from analysis.artifact_status import corrected_unbounded_intervals
+
 from analysis.io import read_manifest
 from analysis.unbounded_model_comparison import (
     bootstrap_models, fit_models, leave_one_size_out, predict,
@@ -121,8 +123,8 @@ def cumulative_comparison(fits: pd.DataFrame, loo: pd.DataFrame,
         "v6": loo,
     }
     interval_tables = {
-        "v4": pd.read_csv(versions["v4"] / "unbounded_bootstrap_intervals.csv"),
-        "v5": pd.read_csv(versions["v5"] / "unbounded_bootstrap_intervals.csv"),
+        "v4": pd.read_csv(corrected_unbounded_intervals("v4")),
+        "v5": pd.read_csv(corrected_unbounded_intervals("v5")),
         "v6": intervals,
     }
     rows = []

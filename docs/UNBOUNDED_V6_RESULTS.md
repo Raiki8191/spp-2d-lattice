@@ -1,5 +1,10 @@
 # UNBOUNDED v6: L=320パイロットと逐次予測評価
 
+> **HISTORICAL / CURRENT**：本文はL≤320時点の研究記録。観測・主点fitはそのサイズ範囲でCURRENT、旧fit bootstrap区間はSUPERSEDEDである。登録原本の予測値・当時の区間はHISTORICALな事前証拠として保存し、事後訂正bootstrapで置き換えない。
+
+> **bootstrap訂正（Phase 4F、2026-10-07）**：本文のモデルfit bootstrap CI、区間由来の予測・被覆・densityは当時の出力である。主fitと異なる推定器を使っていたため、正式な不確実性評価は[UNBOUNDED_BOOTSTRAP_CORRECTION.md](UNBOUNDED_BOOTSTRAP_CORRECTION.md)と`app/out/unbounded-v6-bootstrap-corrected/`を参照する。raw観測、単一サイズの直接再標本化CI、主fit・AICc/BIC・LOO・固定点予測・事前登録原本はこの訂正で変更しない。歴史的出力は保存する。
+
+
 ## 1. 目的と事前登録
 
 UNBOUNDED v5では、最大request jumpの漸近挙動についてzero-logがAICc、BIC、LOOで最良だった一方、有限極限モデルの区間は広く、ゼロ漸近と有限値漸近を識別できなかった。v6では同一サイズの反復追加より新しいサイズ情報を優先し、`L=320`を20 runだけ追加した。
@@ -54,7 +59,7 @@ run層別bootstrapは5,000標本、seed `20260720`で記述区間を計算した
 
 最大jumpの観測平均0.245623は4モデルの点予測より0.027718--0.036031低かった。絶対誤差はzero-powerが最小（0.027718）、zero-log 0.033816、finite-log 0.035574、finite-power 0.036031だった。観測平均はすべての登録PIの下側にあり、標準化誤差は-1.91から-2.49 SEMだった。一方、観測平均のbootstrap区間と各PIは重なる。20 runのSEM 0.014489は4モデルの登録点予測range約0.00831より大きく、モデル同士を単一Lで精密に順位付けするには不足している。
 
-L=256ではzero-logが事前予測誤差最小だったが、L=320ではzero-powerが最小になった。L=192、256、320の逐次絶対誤差合計はzero-log 0.03913、finite-log 0.04193、finite-power 0.04281、zero-power 0.04445で、zero-logがわずかに最小である。ただしL=192予測は当時固定表が残っていないため、L=192追加前データからの事後再構成であり、L=256とL=320の厳密な事前登録とは区別する。
+L=256ではzero-logが事前予測誤差最小だったが、L=320ではzero-powerが最小になった。L=192、256、320の逐次絶対誤差合計はzero-log 0.03913、finite-log 0.04193、finite-power 0.04281、zero-power 0.04445で、zero-logがわずかに最小である。ただしL=192予測は当時固定表が残っていないため、L=192追加前データからの事後再構成であり、L=256の保存事前予測、L=320の正式な事前登録とは区別する。
 
 他のL=320観測でもtransition `delta_p`は全登録点より約0.031--0.036低かった。event `p_after`はfinite-powerの誤差0.00889が最小、`std(p_mid)`はzero-log/finite-logの誤差0.00078が最小、S peakは探索的zero-logの誤差3,274が最小だった。S peak登録fitは境界解・強相関を含むため、外挿検証は副次的である。
 
@@ -80,7 +85,7 @@ finite-log:  Y(L) = Y_inf + a / (log L)^q
 | zero-log | -104.52 | -104.89 | **0.00896** | 0.01274 | 0 | 0.28791 | 0.969 | admissible |
 | finite-log | -100.86 | -102.40 | 0.00910 | 0.01314 | ~0 | 0.28791 | 0.9997 | boundary/inadmissible |
 
-v4とv5ではzero-logがAICc/BIC 1位だったが、L=320追加後のv6ではzero-powerが両基準1位になった。LOOはMAEでzero-log、RMSEでzero-powerが最良であり、一つの指標に収束していない。有限モデルの点fitは`Y_inf=0`境界へ落ち、追加パラメーターの改善がなく不採用となった。L_minを8から96へ上げても有限モデルの点解はゼロ境界だった。一方、run bootstrapの有限極限95%上限はfinite-power 0.265、finite-log 0.217と広く、極限と減衰指数の相関もほぼ1である。optimizerの非負境界によりbootstrap下限が微小な正値になることを「有限極限の検出」とは解釈しない。
+v4とv5ではzero-logがAICc/BIC 1位だったが、L=320追加後のv6ではzero-powerが両基準1位になった。LOOはMAEでzero-log、RMSEでzero-powerが最良であり、一つの指標に収束していない。有限モデルの点fitは`Y_inf=0`境界へ落ち、追加パラメーターの改善がなく不採用となった。L_minを8から96へ上げても有限モデルの点解はゼロ境界だった。一方、run bootstrapの有限極限95%上限はfinite-power 0.265、finite-log 0.217と広く、現行の訂正区間はそれぞれ `[7.839682e-23, 0.2652993946]`、`[7.773895e-23, 0.2167621550]`である（[正式CSV](../app/out/unbounded-v6-bootstrap-corrected/unbounded_bootstrap_intervals.csv)）。極限と減衰指数の相関もほぼ1である。optimizerの非負境界によりbootstrap下限が微小な正値になることを「有限極限の検出」とは解釈しない。
 
 transition `delta_p`と`delta_t/N^2`もzero-powerがAICc/BICで最良で、finite点fitはゼロ境界だった。event位置分散はzero-powerがAICc最良だがfinite-powerも許容解だった。request event `p_after`はfinite-powerがAICc/BIC、LOOで最良で、推定極限0.4301、bootstrap 95%区間[0.4238,0.4344]だった。これは転移位置の漸近であり、最大jumpが有限値へ収束する証拠ではない。
 
@@ -102,11 +107,13 @@ v6は`L=384,512,768,1024`への点外挿、bootstrap区間、モデル間range�
 
 ## 9. 暫定結論
 
-L=320追加後、最大request jumpの点fit、AICc、BICはゼロ漸近を明確に優先し、有限モデルはゼロ境界へ退いた。しかし、finite bootstrapは極限と減衰指数の強相関および広い区間を残し、LOO指標もzero-powerとzero-logで分かれる。したがって最も防御可能な判定は、**「ゼロ漸近が優勢だが、有限値漸近を現在のデータだけでは排除できない」**である。特に「zero-logが最良」と「有限値モデルを排除できる」は別の主張であり、前者もv6では維持されなかった。
+L=320追加後、比較した候補と現行制約の下でzero-powerがAICc/BIC最良となり、有限モデルの点fitは数値的ゼロ境界へ移った。しかし、finite bootstrapは極限と減衰指数の強相関および広い区間を残し、LOO指標もzero-powerとzero-logで分かれる。したがって最も防御可能な判定は、**「ゼロ漸近が優勢だが、有限値漸近を現在のデータだけでは排除できない」**である。特に「zero-logが最良」と「有限値モデルを排除できる」は別の主張であり、前者もv6では維持されなかった。
 
 転移次数はまだ未確定である。有限jumpの証拠は弱くなったが、`L<=320`の12サイズと各大サイズ20 runだけで真の連続転移を確定したとはしない。追加L=384はモデル順位の安定性と有限極限区間の縮小を確認するための次候補である。
 
 ## 10. 再現方法と生成物
+
+以下は当時の生成コマンド（HISTORICAL）。完成済み実験・解析出力へ再実行して上書きしない。原登録を再生成せず、現在の不確実性は訂正成果物を使用する。
 
 ```powershell
 .\gradlew.bat run --args="--unbounded-l320-benchmark"
@@ -115,6 +122,6 @@ L=320追加後、最大request jumpの点fit、AICc、BICはゼロ漸近を明�
 python -m analysis.unbounded_v6 --bootstrap-samples 500 --output app/out/unbounded-v6
 ```
 
-実験はrun shard単位で再開できる。v6は観測統計、事前予測score、逐次予測、4モデルfit、AICc/BIC、LOO、bootstrap、L_min依存性、v4/v5/v6比較、停止・seed・品質監査、外挿、費用対効果のCSVと18図を`app/out/unbounded-v6/`へ出力する。CSV/PNGと生データはGit管理対象外である。
+実験はrun shard単位で再開できる。v6は観測統計、事前予測score、逐次予測、4モデルfit、AICc/BIC、LOO、bootstrap、L_min依存性、v4/v5/v6比較、停止・seed・品質監査、外挿、費用対効果のCSVと19図を`app/out/unbounded-v6/`へ出力する。CSV/PNGと生データはGit管理対象外である。
 
 解析上の限界は、L=320が20 runであること、S peakの登録外挿が探索的であること、有限モデルの非識別性と境界制約、サイズ間でrun数が異なること、外挿性能モデルが粗いことにある。観測値、事前予測、L=320を含む事後fit、未観測サイズへの外挿を混同してはならない。

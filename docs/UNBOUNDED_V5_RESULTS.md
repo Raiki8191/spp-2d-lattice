@@ -1,5 +1,10 @@
 # UNBOUNDED v5: L=256パイロットと漸近モデル識別力の再評価
 
+> **HISTORICAL / CURRENT**：本文はL≤256時点の研究記録。観測・主点fitはそのサイズ範囲でCURRENT、旧fit bootstrap区間はSUPERSEDEDである。現行の不確実性はPhase 4F訂正成果物を参照し、最新の全サイズ結論とは区別する。
+
+> **bootstrap訂正（Phase 4F、2026-10-07）**：本文のモデルfit bootstrap CI、区間由来の予測・被覆・densityは当時の出力である。主fitと異なる推定器を使っていたため、正式な不確実性評価は[UNBOUNDED_BOOTSTRAP_CORRECTION.md](UNBOUNDED_BOOTSTRAP_CORRECTION.md)と`app/out/unbounded-v5-bootstrap-corrected/`を参照する。raw観測、単一サイズの直接再標本化CI、主fit・AICc/BIC・LOO・固定点予測・事前登録原本はこの訂正で変更しない。歴史的出力は保存する。
+
+
 ## 1. 目的と背景
 
 UNBOUNDED v4では、`L=8, 12, 16, 24, 32, 48, 64, 96, 128, 192`の最大request jump、transition width、request-event位置を4種類の漸近モデルで比較した。`L=192`を50 runへ増やしてもzero-logがAICc、BIC、leave-one-size-out（LOO）で相対的に良好だった一方、有限極限モデルの信頼区間は広く、ゼロ漸近も有限値漸近も排除できなかった。
@@ -29,6 +34,8 @@ benchmark 3 runの実行時間は3.138、3.302、3.326秒で、平均3.255秒、
 ## 4. 完全性・停止監査
 
 benchmark 3 runとpilot 17 runはすべて`TRANSITION_WINDOW_COMPLETE`で終了した。欠損値、seed重複、run欠損、14列不変条件違反、step逆行、removed edge減少は0件だった。再実行では全20 runが`resume-skip`された。
+
+このresume実施は当時の研究記録であり、現在の監査では永続的な実行ログから回数まで独立確認できない。再開仕様と現存する完了シャードの整合は確認済みだが、`.complete`はあらゆるbit破損の検出を保証するものではない。
 
 stop auditはbenchmarkと同じ3 seedを`P <= 0.5/L`まで延長した。比較可能prefixは全行・全14列で一致し、最大request jump、request-level疑似臨界event、S peak、transition widthは3/3 seedですべて一致した。auditの最終stepは1,668,377–3,321,675で、元計算の378,727–451,917より後まで進んだが主要観測量は更新されなかった。この監査は3 seedに対する確認であり、全seedの数学的保証ではない。
 
@@ -84,7 +91,7 @@ finite-log:   Y(L) = Y_inf + a / (log L)^q
 
 zero-logはv5でもAICc、BIC、LOO MAE/RMSEで最良だった。v4からv5へのLOO MAEはzero-logで0.00655から0.00586へ、LOO RMSEは0.00831から0.00770へ改善した。ただしfinite-logとの差はAICcで3.66、BICで2.13、LOO MAEで0.00037にすぎず、漸近極限の識別として決定的ではない。
 
-有限powerの`Y_inf` bootstrap区間は[0.000003, 0.295826]、有限logは[0.0000003, 0.290310]である。下端は0境界近傍で、`Y_inf`と減衰指数の相関はfinite-power 0.9769、finite-log 0.9973だった。全500 bootstrap fitは数値的には収束したが、この高相関とL_min依存性は有限極限推定の構造的不安定性を示す。区間下端が数値的に正であることを、ゼロ極限排除とは解釈しない。
+有限powerの`Y_inf` bootstrap区間は[0.000003, 0.295826]、有限logは[0.0000003, 0.290310]である。これらは旧HISTORICAL / SUPERSEDED区間である。現行の有限極限区間はpower `[7.005897e-21, 0.2958263114]`、log `[1.476253e-22, 0.2903100058]`で、[訂正CSV](../app/out/unbounded-v5-bootstrap-corrected/unbounded_bootstrap_intervals.csv)を参照する。下端は0境界近傍で、`Y_inf`と減衰指数の相関はfinite-power 0.9769、finite-log 0.9973だった。全500 bootstrap fitは数値的には収束したが、この高相関とL_min依存性は有限極限推定の構造的不安定性を示す。区間下端が数値的に正であることを、ゼロ極限排除とは解釈しない。
 
 transition `delta_p`、`delta_t/N^2`、event位置分散も同じ4モデルで比較した。観測点数に対して3パラメータモデルの自由度は小さく、有限モデルでは境界解や強相関が現れる。都合のよいfitだけを採用せず、全表を`app/out/unbounded-v5/`へ保存した。
 
@@ -117,6 +124,8 @@ L=256を最大観測サイズとして、最大request jumpの4モデルによ�
 
 ## 10. 再現手順と成果物
 
+以下は当時の生成コマンド（HISTORICAL）。完成済み実験・解析出力へ再実行して上書きしない。現行訂正成果物は冒頭の参照先を使用する。
+
 ```powershell
 .\gradlew.bat run --args="--unbounded-l256-benchmark"
 .\gradlew.bat run --args="--unbounded-l256-pilot"
@@ -124,7 +133,7 @@ L=256を最大観測サイズとして、最大request jumpの4モデルによ�
 python -m analysis.unbounded_v5 --bootstrap-samples 500 --output app/out/unbounded-v5
 ```
 
-解析は観測量、model fit、LOO、bootstrap、`L_min`、外挿、v4/v5比較、事前予測確認、データ品質、seed監査、停止監査、費用対効果のCSVと15図を生成する。図には軸名、モデル、サイズ範囲、観測と外挿の区別を付けた。CSV/PNGと生データはすべて`app/out/`以下でGit管理対象外である。
+解析は観測量、model fit、LOO、bootstrap、`L_min`、外挿、v4/v5比較、事前予測確認、データ品質、seed監査、停止監査、費用対効果のCSVと17図を生成する。図には軸名、モデル、サイズ範囲、観測と外挿の区別を付けた。CSV/PNGと生データはすべて`app/out/`以下でGit管理対象外である。
 
 ## 11. 卒論本文に使える要約
 
