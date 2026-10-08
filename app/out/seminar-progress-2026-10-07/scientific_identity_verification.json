@@ -1,0 +1,805 @@
+{
+  "baseline_commit": "12fade220d65db716511527b0789b49fb52fc317",
+  "selected_count": 9,
+  "font": {
+    "name": "Meiryo",
+    "file": "C:\\Windows\\Fonts\\meiryo.ttc",
+    "available_japanese_fonts": [
+      {
+        "name": "Meiryo",
+        "file": "C:\\Windows\\Fonts\\meiryo.ttc"
+      },
+      {
+        "name": "Meiryo",
+        "file": "C:\\Windows\\Fonts\\meiryo.ttc"
+      },
+      {
+        "name": "Meiryo UI",
+        "file": "C:\\Windows\\Fonts\\meiryo.ttc"
+      },
+      {
+        "name": "Meiryo UI",
+        "file": "C:\\Windows\\Fonts\\meiryo.ttc"
+      },
+      {
+        "name": "Yu Gothic",
+        "file": "C:\\Windows\\Fonts\\YuGothM.ttc"
+      },
+      {
+        "name": "Yu Gothic Medium",
+        "file": "C:\\Windows\\Fonts\\YuGothM.ttc"
+      },
+      {
+        "name": "Yu Gothic UI",
+        "file": "C:\\Windows\\Fonts\\YuGothM.ttc"
+      },
+      {
+        "name": "Yu Gothic",
+        "file": "C:\\Windows\\Fonts\\YuGothB.ttc"
+      },
+      {
+        "name": "Yu Gothic UI",
+        "file": "C:\\Windows\\Fonts\\YuGothB.ttc"
+      },
+      {
+        "name": "Yu Gothic UI",
+        "file": "C:\\Windows\\Fonts\\YuGothB.ttc"
+      },
+      {
+        "name": "Yu Gothic UI Semibold",
+        "file": "C:\\Windows\\Fonts\\YuGothB.ttc"
+      },
+      {
+        "name": "Yu Gothic",
+        "file": "C:\\Windows\\Fonts\\YuGothR.ttc"
+      },
+      {
+        "name": "Yu Gothic UI",
+        "file": "C:\\Windows\\Fonts\\YuGothR.ttc"
+      },
+      {
+        "name": "Yu Gothic UI Semilight",
+        "file": "C:\\Windows\\Fonts\\YuGothR.ttc"
+      },
+      {
+        "name": "Meiryo",
+        "file": "C:\\Windows\\Fonts\\meiryob.ttc"
+      },
+      {
+        "name": "Meiryo",
+        "file": "C:\\Windows\\Fonts\\meiryob.ttc"
+      },
+      {
+        "name": "Meiryo UI",
+        "file": "C:\\Windows\\Fonts\\meiryob.ttc"
+      },
+      {
+        "name": "Meiryo UI",
+        "file": "C:\\Windows\\Fonts\\meiryob.ttc"
+      },
+      {
+        "name": "Yu Gothic",
+        "file": "C:\\Windows\\Fonts\\YuGothL.ttc"
+      },
+      {
+        "name": "Yu Gothic Light",
+        "file": "C:\\Windows\\Fonts\\YuGothL.ttc"
+      },
+      {
+        "name": "Yu Gothic UI",
+        "file": "C:\\Windows\\Fonts\\YuGothL.ttc"
+      },
+      {
+        "name": "Yu Gothic UI Light",
+        "file": "C:\\Windows\\Fonts\\YuGothL.ttc"
+      }
+    ]
+  },
+  "original_english_pixel_replays_identical": true,
+  "input_parsing": "pd.read_csv defaults, identical to original generators",
+  "input_data_rows": {
+    "app/out/scaling-v2-analysis/request_event_summary.csv": {
+      "rows": 27,
+      "columns": [
+        "condition_index",
+        "L",
+        "C",
+        "budget_mode",
+        "run_count",
+        "bootstrap_samples",
+        "bootstrap_seed",
+        "p_before_mean",
+        "p_before_std",
+        "p_before_sem",
+        "p_before_median",
+        "p_after_mean",
+        "p_after_std",
+        "p_after_sem",
+        "p_after_median",
+        "p_mid_mean",
+        "p_mid_std",
+        "p_mid_sem",
+        "p_mid_median",
+        "delta_p_request_mean",
+        "delta_p_request_std",
+        "delta_p_request_sem",
+        "delta_p_request_median",
+        "P_before_mean",
+        "P_before_std",
+        "P_before_sem",
+        "P_before_median",
+        "P_after_mean",
+        "P_after_std",
+        "P_after_sem",
+        "P_after_median",
+        "delta_P_max_mean",
+        "delta_P_max_std",
+        "delta_P_max_sem",
+        "delta_P_max_median",
+        "S_before_mean",
+        "S_before_std",
+        "S_before_sem",
+        "S_before_median",
+        "S_after_mean",
+        "S_after_std",
+        "S_after_sem",
+        "S_after_median",
+        "path_length_mean",
+        "path_length_std",
+        "path_length_sem",
+        "path_length_median",
+        "step_mean",
+        "step_std",
+        "step_sem",
+        "step_median",
+        "p_before_bootstrap_low",
+        "p_before_bootstrap_high",
+        "p_after_bootstrap_low",
+        "p_after_bootstrap_high",
+        "p_mid_bootstrap_low",
+        "p_mid_bootstrap_high",
+        "delta_p_request_bootstrap_low",
+        "delta_p_request_bootstrap_high",
+        "delta_P_max_bootstrap_low",
+        "delta_P_max_bootstrap_high",
+        "P_before_bootstrap_low",
+        "P_before_bootstrap_high",
+        "P_after_bootstrap_low",
+        "P_after_bootstrap_high",
+        "S_before_bootstrap_low",
+        "S_before_bootstrap_high",
+        "S_after_bootstrap_low",
+        "S_after_bootstrap_high",
+        "path_length_bootstrap_low",
+        "path_length_bootstrap_high",
+        "source_manifest",
+        "source_condition_index"
+      ],
+      "csv_sha256": "212c3aa4f2554baa471e0170845bba163296f6fd9145b183b16609862a83f76d",
+      "parsed_rows_sha256": "59ab20f5b1836490707667e4fb277d8b5e3b9f3c33fadbeee941b7286a67faf9"
+    },
+    "app/out/scaling-v3-analysis/finite_correction_fits.csv": {
+      "rows": 192,
+      "columns": [
+        "condition_label",
+        "observable",
+        "source_column",
+        "L_min",
+        "used_L",
+        "model",
+        "point_count",
+        "parameter_count",
+        "converged",
+        "admissible",
+        "boundary_solution",
+        "covariance_ok",
+        "start_count",
+        "converged_start_count",
+        "failure",
+        "rss",
+        "aicc",
+        "bic",
+        "max_parameter_correlation",
+        "amplitude",
+        "amplitude_standard_error",
+        "exponent",
+        "exponent_standard_error",
+        "theory_fixed",
+        "scaling_exponent",
+        "correction",
+        "correction_standard_error",
+        "omega",
+        "omega_standard_error"
+      ],
+      "csv_sha256": "570e5ae525e68e3100da80069ecb3491374b496be2fbb116a1d6f2d7c12d045b",
+      "parsed_rows_sha256": "fd878c4d18093e458426e5304c30028fcd6d98abb73129198560891a0a6419f5"
+    },
+    "app/out/scaling-v3-analysis/universality_model_fits.csv": {
+      "rows": 70,
+      "columns": [
+        "observable",
+        "source_column",
+        "L_min",
+        "used_L",
+        "model",
+        "point_count",
+        "parameter_count",
+        "converged",
+        "admissible",
+        "boundary_solution",
+        "covariance_ok",
+        "start_count",
+        "converged_start_count",
+        "failure",
+        "rss",
+        "aicc",
+        "bic",
+        "max_parameter_correlation",
+        "amplitude_c1",
+        "amplitude_c1_standard_error",
+        "exponent_c1",
+        "exponent_c1_standard_error",
+        "correction_c1",
+        "correction_c1_standard_error",
+        "omega_c1",
+        "omega_c1_standard_error",
+        "amplitude_c2",
+        "amplitude_c2_standard_error",
+        "exponent_c2",
+        "exponent_c2_standard_error",
+        "correction_c2",
+        "correction_c2_standard_error",
+        "omega_c2",
+        "omega_c2_standard_error",
+        "theory_fixed",
+        "scaling_exponent",
+        "scaling_exponent_c1",
+        "scaling_exponent_c2",
+        "exponent",
+        "exponent_standard_error",
+        "omega",
+        "omega_standard_error"
+      ],
+      "csv_sha256": "b50c0015660828aabbd9170e9853499610fb694053e48435e72d555c11234f7b",
+      "parsed_rows_sha256": "a2d4deda5e77183fd80ba23784ee6f0d7a2c1c0723fe0f5cf0265c88dda6cb98"
+    },
+    "app/out/scaling-v3-finite-bootstrap-corrected/finite_primary_corrected_table.csv": {
+      "rows": 24,
+      "columns": [
+        "condition_label",
+        "observable",
+        "source_column",
+        "model",
+        "L_min",
+        "used_L",
+        "estimator",
+        "point_exponent",
+        "recomputed_exponent",
+        "point_rss",
+        "recomputed_rss",
+        "point_aicc",
+        "recomputed_aicc",
+        "point_bic",
+        "recomputed_bic",
+        "selected_omega",
+        "parameter_count",
+        "start_count",
+        "amplitude_lower",
+        "amplitude_upper",
+        "raw_exponent_lower",
+        "raw_exponent_upper",
+        "correction_lower",
+        "correction_upper",
+        "point_boundary_solution",
+        "point_max_parameter_correlation",
+        "samples",
+        "requested_samples",
+        "fit_failures",
+        "mean",
+        "median",
+        "ci95_low",
+        "ci95_high",
+        "boundary_frequency",
+        "point_in_ci",
+        "artifact_status",
+        "uncertainty_scope"
+      ],
+      "csv_sha256": "23545b6cbc5fce218127da463adfe395ea95d2ad30599855a63ab3409a751a76",
+      "parsed_rows_sha256": "2b5f2c078ceb6e00328f2d4c32c9a7dc65c4abe27d563ce51678bd752f9add7b"
+    },
+    "app/out/unbounded-v7/unbounded_size_summary.csv": {
+      "rows": 78,
+      "columns": [
+        "observable",
+        "L",
+        "run_count",
+        "value",
+        "sample_std",
+        "sample_sem"
+      ],
+      "csv_sha256": "2f6c8832670be27106d97a7262ddb8ddb25480450012b496d6c949a00bf6fe7a",
+      "parsed_rows_sha256": "073af6c8fd2c032e4ed4451c86ec41788a08a638e47f34833717faef773288f2"
+    },
+    "app/out/unbounded-v7/unbounded_model_fits.csv": {
+      "rows": 20,
+      "columns": [
+        "model",
+        "point_count",
+        "parameter_count",
+        "converged",
+        "admissible",
+        "boundary_solution",
+        "covariance_ok",
+        "start_count",
+        "converged_start_count",
+        "failure",
+        "rss",
+        "aicc",
+        "bic",
+        "max_parameter_correlation",
+        "amplitude",
+        "amplitude_standard_error",
+        "decay_exponent",
+        "decay_exponent_standard_error",
+        "observable",
+        "L_min",
+        "L_max",
+        "used_L",
+        "limit",
+        "limit_standard_error",
+        "residual_rms",
+        "limit_decay_correlation",
+        "aic"
+      ],
+      "csv_sha256": "85006d77fab2a035d820019cff80cfc804961c05d3acfd96b23fba3f4a6c4beb",
+      "parsed_rows_sha256": "4db01d873df7056b2162a3ddacfc9805560e3e18cec681ac0cafdef90703ca51"
+    },
+    "app/out/unbounded-v7-bootstrap-corrected/unbounded_bootstrap_samples.csv": {
+      "rows": 10000,
+      "columns": [
+        "sample",
+        "model",
+        "point_count",
+        "parameter_count",
+        "converged",
+        "admissible",
+        "boundary_solution",
+        "covariance_ok",
+        "start_count",
+        "converged_start_count",
+        "failure",
+        "rss",
+        "aicc",
+        "bic",
+        "max_parameter_correlation",
+        "amplitude",
+        "amplitude_standard_error",
+        "decay_exponent",
+        "decay_exponent_standard_error",
+        "observable",
+        "L_min",
+        "L_max",
+        "used_L",
+        "limit",
+        "limit_standard_error",
+        "residual_rms",
+        "limit_decay_correlation",
+        "aic",
+        "finite_limit_zero_boundary"
+      ],
+      "csv_sha256": "647126dd622a624680ff44ad0c1bc21fea4a04660dc5e54aa2ddd25bb1f4910d",
+      "parsed_rows_sha256": "ca05e65d5e54912bdf0df411c192f25cb8cc923b94e656daf2c939cc89576192"
+    },
+    "app/out/sweep-pilot/manifest.csv": {
+      "rows": 9,
+      "columns": [
+        "condition_index",
+        "L",
+        "C",
+        "budget_mode",
+        "runs",
+        "max_steps",
+        "measurement_mode",
+        "measurement_interval",
+        "base_seed",
+        "result_path",
+        "edge_trace_path"
+      ],
+      "csv_sha256": "64d5cf264e50091052bb189c4445cebf60fd14f2ed24b9da4f9e0f437e888213",
+      "parsed_rows_sha256": "87a00d2f369ffb418a5ad43521bd39c87151e4f7d7d21ebdc3cbd043772e20fc"
+    },
+    "app/out/sweep-pilot/L=8/C=1/results.csv": {
+      "rows": 1115,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "b99519a9ade1514bd4f6df8e13e29cd7efcdc47793761d31beea5736f9b38bde",
+      "parsed_rows_sha256": "eecddcddaec9ffed11f681f0ad38a57f6e8c88797812f74e3afe3290b0bd1ed2"
+    },
+    "app/out/sweep-pilot/L=8/C=2/results.csv": {
+      "rows": 793,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "abc53cbd64fb261ac6b7dc2ae2ca64f56483419dc59136ec18cc158a2a9d1261",
+      "parsed_rows_sha256": "c5a47776c5e2702ff1e0a78f125a871a54fb667979bc7866228cab9eff96cd60"
+    },
+    "app/out/sweep-pilot/L=8/C=64/results.csv": {
+      "rows": 404,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "3191fb6d448aa205220667ce1b1f230fda0912032a35a21ade65c2a45f90ef53",
+      "parsed_rows_sha256": "db3334d824dcf04f981ede8235201cbeab603546e8faffad9ff642f6d8daeda9"
+    },
+    "app/out/sweep-pilot/L=12/C=1/results.csv": {
+      "rows": 2623,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "56e03996901b292a4ed0edb5474e096c8658f3afdc6e135c93fd6a74621af2f8",
+      "parsed_rows_sha256": "e83b326f8b0fe9ced0e7173f98d6742fca021b7b30b2f59d64c245a56371d884"
+    },
+    "app/out/sweep-pilot/L=12/C=2/results.csv": {
+      "rows": 1834,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "63d4fb11b34147b2c87d1a930c0ee522ee01a328d07729e42d3195a3d7f62a99",
+      "parsed_rows_sha256": "03dc4322d1049e1015ce972fe4d77e1409df8c21b8f699622b7bcf5f0036d19f"
+    },
+    "app/out/sweep-pilot/L=12/C=144/results.csv": {
+      "rows": 768,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "d3324442bf79f4223007e84f76618831e2868df2d932c953009db049499d8885",
+      "parsed_rows_sha256": "138ae5da71e59250b4bbf1a18db08ac2545834ae2f04ae9fdc0793d16f3bdbf9"
+    },
+    "app/out/sweep-pilot/L=16/C=1/results.csv": {
+      "rows": 4733,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "36c0df1c46fb4d1616a386db95269a6e9abb36eca96b9733c65f49b9836df411",
+      "parsed_rows_sha256": "531eff36edeb1f93bf25a49a76ec220ddebb4942d4415e421d36f5c8597a467a"
+    },
+    "app/out/sweep-pilot/L=16/C=2/results.csv": {
+      "rows": 3278,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "f095131442cb084f65f300d7342ff6af73af115707612605feddad1804c7ab7f",
+      "parsed_rows_sha256": "6ec33b5fa8641e1fe143c3285a86f68e470943b39f83295f77568d605d2afc44"
+    },
+    "app/out/sweep-pilot/L=16/C=256/results.csv": {
+      "rows": 1273,
+      "columns": [
+        "run",
+        "L",
+        "C",
+        "step",
+        "removed_edges",
+        "remaining_edges",
+        "removed_edge_fraction",
+        "largest_cluster_size",
+        "largest_cluster_fraction",
+        "second_largest_cluster_size",
+        "mean_cluster_size",
+        "accepted_requests",
+        "rejected_requests",
+        "seed"
+      ],
+      "csv_sha256": "748246e2957f0306f84544720aa85a7d2abaed42c13300a30965abb0cfb4f11c",
+      "parsed_rows_sha256": "1b8b15af42445de8ad97f7d5b7670a8f4523d24574192bb6ea2a29679949ead5"
+    }
+  },
+  "all_numeric_arrays_errorbars_fit_curves_axis_limits_scales_ticks_styles_exact": true,
+  "axes_positions_preserved": true,
+  "display_changes_only": [
+    "title/xlabel/ylabel/legend/annotation strings",
+    "Japanese font for translated text"
+  ],
+  "new_fit_or_resampling": false,
+  "research_functions_called": [
+    [
+      "analysis/correction_fitting.py",
+      "corrected_power"
+    ],
+    [
+      "analysis/correction_fitting.py",
+      "simple_power"
+    ],
+    [
+      "analysis/io.py",
+      "<genexpr>"
+    ],
+    [
+      "analysis/io.py",
+      "_convert_integers"
+    ],
+    [
+      "analysis/io.py",
+      "_require_columns"
+    ],
+    [
+      "analysis/io.py",
+      "load_sweep"
+    ],
+    [
+      "analysis/io.py",
+      "read_manifest"
+    ],
+    [
+      "analysis/io.py",
+      "read_results"
+    ],
+    [
+      "analysis/plot_smoke.py",
+      "create_plots"
+    ],
+    [
+      "analysis/scaling_v3.py",
+      "_plot_finite_point_curves"
+    ],
+    [
+      "analysis/scaling_v3.py",
+      "_plot_shared_exponent_series"
+    ],
+    [
+      "analysis/scaling_v3.py",
+      "_save"
+    ],
+    [
+      "analysis/scaling_v3.py",
+      "create_figures"
+    ],
+    [
+      "analysis/scaling_v3_finite_bootstrap_correction.py",
+      "create_ci_figure"
+    ],
+    [
+      "analysis/unbounded_bootstrap_correction.py",
+      "correction_figures"
+    ],
+    [
+      "analysis/unbounded_model_comparison.py",
+      "predict"
+    ],
+    [
+      "analysis/unbounded_v7.py",
+      "create_figures"
+    ],
+    [
+      "analysis/unbounded_v7.py",
+      "save"
+    ],
+    [
+      "analysis/validation.py",
+      "<genexpr>"
+    ],
+    [
+      "analysis/validation.py",
+      "_fail_first"
+    ],
+    [
+      "analysis/validation.py",
+      "_require_columns"
+    ],
+    [
+      "analysis/validation.py",
+      "validate_sweep"
+    ]
+  ],
+  "warnings": [],
+  "original_files_preserved": {
+    "count": 3040,
+    "sha256_before_after_equal": true
+  },
+  "temporary_english_replay_directory": "C:\\Users\\yoshi\\AppData\\Local\\Temp\\spp-seminar-label-verification-gdznhc_d",
+  "figures": [
+    {
+      "original": "app/out/sweep-pilot/figures/L=16_largest_cluster_fraction_vs_removed_edge_fraction.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_09_small_lattice_transition_ja.png",
+      "status": "CURRENT",
+      "english_replay_sha256": "53c27c6b1a21458c8fcddbbd0c7acf95759ec79b1b5bae4f8c614de8cdf74345",
+      "original_sha256": "53c27c6b1a21458c8fcddbbd0c7acf95759ec79b1b5bae4f8c614de8cdf74345",
+      "japanese_sha256": "5f7fb7eba506f016feeb55011de0d6566c3a2047446819b70b79ff95ee16c02d",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "f2a9e4c5cbdb139ca73fd3fb3aaa61a350798bcd8324c5282b6e950855b090ff"
+    },
+    {
+      "original": "app/out/scaling-v3-shared-exponent-figure-corrected/simple_vs_corrected_P_before_corrected.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_01_finite_P_scaling_ja.png",
+      "status": "CORRECTED",
+      "english_replay_sha256": "d437b5fbbbfb2c568370e41d1e7452dda7e9d48aabcdc3b91a9a3b23562c393e",
+      "original_sha256": "d437b5fbbbfb2c568370e41d1e7452dda7e9d48aabcdc3b91a9a3b23562c393e",
+      "japanese_sha256": "3bcae2bfcd6dcd2bc74a3884248e1bd44495a75063f0338cebd3638ad907ac02",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "0fbd477312fc43de00ec60555e05a24760e0d4fc677f02164a1685e3e2a08446"
+    },
+    {
+      "original": "app/out/scaling-v3-analysis/figures/simple_vs_corrected_S_before.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_02_finite_S_scaling_ja.png",
+      "status": "CURRENT",
+      "english_replay_sha256": "053eee9da849a148df14dbfd6a519bb0130d92545396eb0ba1f3d3a223760eb6",
+      "original_sha256": "053eee9da849a148df14dbfd6a519bb0130d92545396eb0ba1f3d3a223760eb6",
+      "japanese_sha256": "8802aeee2d70809c8f6324b5c0751b9c581aa21b4b615b9d96d65c012e614b76",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "649082ba5b33bb9b8f0f59111049e35c9f279c2665b1ad14294310d248f9f2f2"
+    },
+    {
+      "original": "app/out/scaling-v3-finite-bootstrap-corrected/finite_primary_bootstrap_ci.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_03_finite_exponent_intervals_ja.png",
+      "status": "CORRECTED",
+      "english_replay_sha256": "f422b4dfda68bda400ba83aaefa636f364bc638402a2de8f15a08fe45e4adcf4",
+      "original_sha256": "f422b4dfda68bda400ba83aaefa636f364bc638402a2de8f15a08fe45e4adcf4",
+      "japanese_sha256": "11410da03e566913bdfd9a5475d1f57f8ffa7e485eda4a8735aa1b0c52785c84",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "ab7d5a78cee4e2512ed5294ff8e6dc9dfdb00ba96facab7f0b60799d3c76eb5e"
+    },
+    {
+      "original": "app/out/scaling-v3-shared-exponent-figure-corrected/c1_c2_shared_exponent_corrected.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_04_c1_c2_shared_exponent_ja.png",
+      "status": "CORRECTED",
+      "english_replay_sha256": "c6ddb545ad0b690da300d79f7fb6ca0aadcdb507a4ff6c9104f3fc20a33979c0",
+      "original_sha256": "c6ddb545ad0b690da300d79f7fb6ca0aadcdb507a4ff6c9104f3fc20a33979c0",
+      "japanese_sha256": "ef42968a7ebb17174c142ef21888315e9c29d9e1b596f0ab790597ab91103f0a",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "287cebedd209dc1c2d751fa1ab0d8720c6290863f7246211a5c7c1cc5d398690"
+    },
+    {
+      "original": "app/out/unbounded-v7/figures/maximum_request_jump_size_dependence.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_05_max_change_scaling_ja.png",
+      "status": "CURRENT",
+      "english_replay_sha256": "d05944e3e69fd781206b81c3ccf78dc278d3cf10dbc6e9a0554359d50b93eb9c",
+      "original_sha256": "d05944e3e69fd781206b81c3ccf78dc278d3cf10dbc6e9a0554359d50b93eb9c",
+      "japanese_sha256": "e523daca8658e7add9dfa72cda0f7a585056ca1d372203b73d622bf56aeeec71",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "90f4d4c2ceb67dec4541fe8a5c9d62c00e247fd7198aa9aac189232949896918"
+    },
+    {
+      "original": "app/out/unbounded-v7-bootstrap-corrected/figures/corrected_finite_limit_distributions.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_06_corrected_finite_limit_ja.png",
+      "status": "CORRECTED",
+      "english_replay_sha256": "a59969f71f10490922376619889626150e8d2662b576524f23850894b6c3cee9",
+      "original_sha256": "a59969f71f10490922376619889626150e8d2662b576524f23850894b6c3cee9",
+      "japanese_sha256": "d687a00a8bccaa0886cf733978b9b3fab42998951fa0aa25eda59ad6c429cfdd",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "9c3b6d86fa528768ea23b906d015832e2cc57d9aca685cf2f76e9a1a427377fb"
+    },
+    {
+      "original": "app/out/unbounded-v7/figures/transition_delta_p_size_dependence.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_07_transition_width_p_ja.png",
+      "status": "CURRENT",
+      "english_replay_sha256": "c8ee1156583944ceddd33844d3a5150385b8e1a6888f057b6f871441f9a3abd7",
+      "original_sha256": "c8ee1156583944ceddd33844d3a5150385b8e1a6888f057b6f871441f9a3abd7",
+      "japanese_sha256": "830bcbbd07c14ca073587239907a04bc7bc0582d1c18fe987b7977119c8bd93b",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "2871b5021fcb8bc25ce1d502e3ce4d7d71a10594a7d1fb285359246995650276"
+    },
+    {
+      "original": "app/out/unbounded-v7/figures/transition_delta_t_normalized_size_dependence.png",
+      "output": "app/out/seminar-progress-2026-10-07/figure_08_transition_width_time_ja.png",
+      "status": "CURRENT",
+      "english_replay_sha256": "36900bd3add0a2bc9bbd49d87204c5389415c1db37430db2402fc296bd59fa47",
+      "original_sha256": "36900bd3add0a2bc9bbd49d87204c5389415c1db37430db2402fc296bd59fa47",
+      "japanese_sha256": "0b8fff53bdd3fe15ec0577de855e6b53d24eeb4382a12539b80e3abdcaeced32",
+      "english_pixels_exact": true,
+      "numeric_exact": true,
+      "artist_manifest_sha256": "1852168cb9ea6032f9414bea2109077ae988d1d4d63fa396cb23c22f6e871d4a"
+    }
+  ]
+}
