@@ -1,0 +1,37 @@
+[
+  {
+    "source": "papers/spp_main.pdf",
+    "pages": 5,
+    "sha256": "832a33f7605fbb72fac0a5493bcfa5a053e9908afdb856f34c6fc5660003b6bb"
+  },
+  {
+    "source": "papers/spp_supplement.pdf",
+    "pages": 14,
+    "sha256": "d6660c8a293ef8cc8856a6654eafbf8b6166ad00aa8d3edb1330b16d510764d0"
+  },
+  {
+    "source": "textbook/complex_networks_ch8.pdf",
+    "pages": 23,
+    "sha256": "035c83c9c16d4f765574ced1ed5fd8c6ab21694333c2202be1cd2945147e2a3a"
+  },
+  {
+    "source": "lectures/slide-lecture3.pdf",
+    "pages": 60,
+    "sha256": "bb13682bab2dca4a541e69bb49427b590bd90f780a80b8a11c84ef9cc7ff3c5d"
+  },
+  {
+    "source": "lectures/slide-lecture4.pdf",
+    "pages": 67,
+    "sha256": "6ded1d7466ff9836d291e4b3aab7d751fe13041a14c0abd13904ba0aaec06d5d"
+  },
+  {
+    "source": "lectures/slide-lecture7.pdf",
+    "pages": 48,
+    "sha256": "a78c6247725559ea4de41b4d8dcdc4c3cada1216430c00b2eee7adc01d5dcf0f"
+  },
+  {
+    "source": "lectures/slide-lecture9.pdf",
+    "pages": 56,
+    "sha256": "4f016ea14a6ec3b113f2415d05ffcf5f7e3c1ff6ec28f7362bd7bdc1d33959a0"
+  }
+]

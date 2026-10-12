@@ -172,10 +172,30 @@ summaries.sort(key=lambda r:int(r['L']))
 for name, data in [('curves_L128.csv',selected),('maximum_request_jump.csv',summaries)]:
     with (HERE/'data'/name).open('w',encoding='utf-8-sig',newline='') as f:
         writer=csv.DictWriter(f,fieldnames=list(data[0])); writer.writeheader(); writer.writerows(data)
+tail=rows('analysis/presentation_spp_comparison_ja_v2/data/tail_guarantees.csv')
+with (HERE/'data'/'peak_guarantee_summary.csv').open('w',encoding='utf-8-sig',newline='') as f:
+    writer=csv.DictWriter(f,fieldnames=list(tail[0]));writer.writeheader();writer.writerows(tail)
+request_counts={}
+for r in rows('analysis/presentation_spp_comparison_ja_v2/data/request_guarantees.csv'):
+    group=request_counts.setdefault(r['condition_id'],dict(condition_id=r['condition_id'],label=r['label'],L=r['L'],n_runs=0,n_certified=0))
+    group['n_runs']+=1;group['n_certified']+=int(r['guaranteed_full_process_maximum']=='True')
+with (HERE/'data'/'request_guarantee_counts.csv').open('w',encoding='utf-8-sig',newline='') as f:
+    writer=csv.DictWriter(f,fieldnames=list(next(iter(request_counts.values()))));writer.writeheader();writer.writerows(request_counts.values())
 
 SLIDES[9]['notes'] += '\n本文PDF2/047402-2で著者は、ER上では有限Cが通常パーコレーションと同じ普遍性クラス、制限なしCが異なる指数とより急峻な転移を示すと報告している。これはER上の著者の結論で、2D格子へ拡張した結論ではない。'
+SLIDES[10]['body'].append('ER上の有限C：著者は通常と同じ普遍性と報告')
 SLIDES[12]['notes'] = SLIDES[12]['notes'].replace('縦の幅','転移幅')
 SLIDES[21]['notes'] += '\n最大要求落下の平均の極限と、極限平均曲線の左右差Jは一般に同じ定義ではない。最大落下位置の収束、削除率区間の縮小、run間ゆらぎを併せて調べる。'
+SLIDES[22]['footer'] = SLIDES[22]['footer'].replace('asymptotic_model_fits.csv','limit_model_fits.csv')
+SLIDES[22]['notes'] = SLIDES[22]['notes'].replace('asymptotic_model_fits.csv','limit_model_fits.csv')
+SLIDES[19]['footer'] = '本研究 SquareLattice.buildAdjacency・SPPSimulator・ShortestPathFinder；講義4 8–10'
+SLIDES[19]['notes'] += '\nSquareLatticeの水平ループは各L行にL−1辺、垂直ループは各L列にL−1辺を作り、逆方向も同じ無向辺IDを参照する。境界を越える接続は作らない。'
+SLIDES[7]['body'] = ['J=0：臨界点で連続','J>0：有限の\nジャンプが残る','定義を示す模式曲線\n（研究データではない）']
+SLIDES[10]['body'] = ['(a) N=2²⁰：Cを比較','(b) 平均Sの最大位置','(c)(d) C=1とC=NのS(p)','横軸p：辺の削除率','有限C：著者は通常と\n同じ普遍性を報告（ER）']
+SLIDES[11]['body'][0] = 'C=N：各runの\n最大単一辺落下を基準'
+SLIDES[11]['body'][-1] = '異なるNの分布の\n重なりを検討する'
+SLIDES[20]['body'][2] = '丸印：全run共通の終端'
+SLIDES[21]['body'][-1] = 'ゼロへの遅い減衰か、\n正の極限かは判別困難'
 charts={}
 colors=['#007F86','#CC6733','#535B9D']
 for obs in ['P','S']:
@@ -191,9 +211,9 @@ for obs in ['P','S']:
         series.append(dict(name=f'{"制限なし" if j==2 else "C="+str(j+1)}（{a[0]["n_runs"]}回）',x=x,y=y,color=colors[j],end=[x[-1],y[-1]]))
     charts[obs+'128']=dict(xlabel='辺の削除率 p',ylabel='最大クラスターの割合 P' if obs=='P' else '平均クラスターサイズ S',xlog=False,ylog=False,xmin=0,xmax=1,ymin=0,ymax=1 if obs=='P' else None,series=series)
 charts['jump']=dict(xlabel='格子の一辺の頂点数 L（対数軸）',ylabel='最大要求落下 ΔP_max',xlog=True,ylog=False,xmin=8,xmax=1024,ymin=0,ymax=.45,
-    series=[dict(name='制限なし：平均±標準誤差',x=[int(r['L']) for r in summaries],y=[float(r['delta_P_max_mean']) for r in summaries],sem=[float(r['delta_P_max_sem']) for r in summaries],color='#007F86')])
+    series=[dict(name='制限なし：平均±標準誤差',x=[int(r['L']) for r in summaries],y=[float(r['delta_P_max_mean']) for r in summaries],sem=[float(r['delta_P_max_sem']) for r in summaries],color='#007F86',markers=True)])
 x=[i/100 for i in range(101)]
-charts['concept']=dict(xlabel='辺の削除率 p（模式）',ylabel='極限の秩序変数 P_∞（模式）',xlog=False,ylog=False,xmin=0,xmax=1,ymin=0,ymax=1,
+charts['concept']=dict(xlabel='辺の削除率 p（模式）',ylabel='P∞（模式）',xlog=False,ylog=False,xmin=0,xmax=1,ymin=0,ymax=1,
  series=[dict(name='連続 J=0',x=x,y=[max(1-2*t,0) for t in x],color='#007F86'),dict(name='不連続 J>0',x=x[:51]+x[50:],y=[.3+.7*(1-2*t) for t in x[:51]]+[0 for t in x[50:]],color='#CC6733')])
 
 assets=BUILD/'assets'; assets.mkdir(exist_ok=True)
@@ -209,13 +229,14 @@ for figure,page,box in [('fig2',2,(.512,.535,.920,.770)),('fig3',3,(.085,.058,.4
 
 intro='''# スライドと出典の対応\n\nA：原典の記載、B：定義・仮定からの導出、C：本研究への応用、D：未確認課題。原典の事実と導出・解釈を区別する。全ページ番号は1始まり。\n\n## 資料のページ規約\n\n- 本文：`sources_local/papers/spp_main.pdf`。PDF1–5＝印刷047402-1–5。\n- 補足：`sources_local/papers/spp_supplement.pdf`。PDF1は印刷番号なし、PDF2–14は印刷2–14。式番号S1–S24等で追跡する。\n- 教科書：`sources_local/textbook/complex_networks_ch8.pdf`。見開き、PDF1左148/右149、PDFk左146+2k/右147+2k。第8章は印刷149–192。表紙・奥付なし、書誌の著者・版は未確定。\n- 講義3・4・7・9：`sources_local/lectures/slide-lectureX.pdf`。PDFページ＝表示スライド番号。用語・説明表現の参考と科学的根拠を区別する。\n- 本研究：`analysis/presentation_spp_comparison_ja_v2/data/`。発表に使う表を`data/`へ複写。コードは`app/src/main/java/spp/`。PDFのページ規約は適用しない。\n\n## スライド別対応\n\n'''
 out=[intro]
+out.append('主な原典：Kim & Radicchi, “Shortest-Path Percolation on Random Networks”, Physical Review Letters 133, 047402 (2024), DOI: 10.1103/PhysRevLett.133.047402。\n\n')
 for s in SLIDES:
     out.append(f'### {s["id"]:02d}　{s["title"].replace(chr(10),"：")}\n\n')
     out.append(f'- 科学的主張：{"；".join(s["body"])}\n- 区分：{s["classification"]}\n- 参照資料・PDF／印刷ページ・式／図：{s["footer"]}\n- 数式・数値・図：{"；".join(s["formula"]) or (s["asset"] or s["chart"] or "上記の定義・比較表")}\n- 根拠となる記述：{s["evidence"]}\n- 導出・解釈と限界：{s["notes"].split("【説明】",1)[1]}\n\n')
 out.append('## 再生成とデータの来歴\n\n`prepare_deck.py`→`.build/deck.json`→`build_powerpoint.ps1`→`slides/`。図2・3・5は原典画像を切り出す。研究曲線は既存表の値を変えずnative chartへ格納。要求状態のfirst-crossingに対応する階段を表示し、途中を単一辺の実測とみなさない。最大落下はrun表との平均・SEM照合済み。模式図だけは定義用の任意関数で、研究結果ではない。\n')
 (HERE/'source_map.md').write_text(''.join(out),encoding='utf-8')
 provenance={}
-for rel in ['analysis/presentation_spp_comparison_ja_v2/data/curves.csv','analysis/presentation_spp_comparison_ja_v2/data/event_summary.csv','analysis/presentation_spp_comparison_ja_v2/data/event_runs.csv']:
+for rel in ['analysis/presentation_spp_comparison_ja_v2/data/'+name for name in ['curves.csv','event_summary.csv','event_runs.csv','request_guarantees.csv','tail_guarantees.csv','limit_model_fits.csv']]:
     p=safe_input(rel);provenance[rel]=hashlib.sha256(p.read_bytes()).hexdigest()
 (HERE/'data'/'provenance.json').write_text(json.dumps(provenance,indent=2),encoding='utf-8')
 print(f'Prepared {len(SLIDES)} slides, empirical tables, source map, and source-figure crops.')
