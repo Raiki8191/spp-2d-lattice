@@ -80,18 +80,30 @@ def main():
     board_pdf=TASK/'board/board_notes_01-10.pdf'
     board_info=subprocess.check_output(['pdfinfo','-enc','UTF-8',str(board_pdf)],text=True,encoding='utf-8',errors='replace')
     board_pages=int(re.search(r'Pages:\s+(\d+)',board_info).group(1))
+    assert 3 <= board_pages <= 4,('speaker cheat sheet page count',board_pages)
+    assert re.search(r'Page size:\s+[\d.]+ x [\d.]+ pts \(A4\)',board_info),board_info
     board_text=subprocess.check_output(['pdftotext','-enc','UTF-8',str(board_pdf),'-'],text=True,encoding='utf-8')
     assert '平均クラスターサイズ' in board_text and 'ゼータ' in board_text
     md=(TASK/'board/board_notes_01-10.md').read_text(encoding='utf-8')
-    for i,s in enumerate(deck['slides'],1):
-        assert s['title'] in md,(i,'board correspondence title')
-    for name in ['m_s','n_s',r'S_{\rm all}','N-s_R']:
+    for block in ['1〜6','7','8','9','10']:
+        assert md.count('## 【対応：スライド'+block+'】')==1,(block,'board correspondence')
+    for i in range(1,7):
+        assert f'**p.{i} ' in md,(i,'oral memo')
+    for name in ['m_s','n_s','N-s_R',r'\log x',r'\Delta X', '質問があれば']:
         assert name in md,name
+    sheet_protection=BUILD/'board_cheatsheet/protected.json'
+    if sheet_protection.exists():
+        for item in json.loads(sheet_protection.read_text(encoding='utf-8')):
+            path=(ROOT/item['path']).resolve()
+            assert path.is_relative_to(ROOT),path
+            assert sha(path.read_bytes())==item['sha256'],f'Protected input changed: {path}'
     fonts={}
     for key,file in [('slides',pdf),('board',board_pdf)]:
         out=subprocess.check_output(['pdffonts',str(file)],text=True,encoding='utf-8')
         (BUILD/f'{key}_fonts.txt').write_text(out,encoding='utf-8')
-        assert 'yes' in out,(key,'embedded fonts')
+        rows=[re.search(r'\s+(yes|no)\s+(yes|no)\s+(yes|no)\s+\d+\s+\d+\s*$',line)
+              for line in out.splitlines()[2:] if line.strip()]
+        assert rows and all(row and row.group(1)=='yes' for row in rows),(key,'embedded fonts')
         fonts[key]='font report saved; visually verify glyph coverage'
     result={'slides':10,'speaker_notes':10,'canvas':'16:9',
             'grid_native_edge_sets':'12,12,12,8; exact sets match',
@@ -99,7 +111,9 @@ def main():
             'embedded_figure_and_equation_images':'all unchanged from prepared assets',
             'protected_input_sha256':'all match', 'powerpoint_reopen':True,
             'layout_warnings':0,'slide_pdf_pages':10,'board_pdf_pages':board_pages,
-            'board_slide_titles':'10/10 match', 'fonts':fonts}
+            'board_slide_coverage':'1-6,7,8,9,10; all covered',
+            'board_layout':'A4 speaker cheat sheet; 11.5 pt body, 13.5 pt display math',
+            'fonts':fonts}
     (BUILD/'validation.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps(result,ensure_ascii=False,indent=2))
 

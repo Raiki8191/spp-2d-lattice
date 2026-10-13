@@ -1,6 +1,6 @@
-"""Build the separate Japanese 10-slide board-notes PDF using local LuaLaTeX.
+"""Build the A4 speaker cheat sheet using the existing local LuaLaTeX.
 
-Only board/board_notes_01-10.pdf and .build/ten-slide/board intermediates
+Only board/board_notes_01-10.pdf and .build/ten-slide/board_cheatsheet intermediates
 are written. No third-party Python packages or installation are required.
 The editable source is board/board_notes_01-10.md.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SOURCE = HERE / "board" / "board_notes_01-10.md"
 TARGET = HERE / "board" / "board_notes_01-10.pdf"
-BUILD = HERE / ".build" / "ten-slide" / "board"
+BUILD = HERE / ".build" / "ten-slide" / "board_cheatsheet"
 
 
 def escape_text(value: str) -> str:
@@ -118,6 +118,12 @@ def markdown_to_latex(markdown: str) -> str:
         if line == "<!-- pagebreak -->":
             flush()
             output.append(r"\clearpage")
+        elif line == "<!-- write -->":
+            flush()
+            output.append(r"\begin{writebox}")
+        elif line == "<!-- /write -->":
+            flush()
+            output.append(r"\end{writebox}")
         elif line == "$$":
             flush()
             math_lines = []
@@ -127,7 +133,7 @@ def markdown_to_latex(markdown: str) -> str:
                 index += 1
             if index >= len(lines):
                 raise ValueError("Unclosed display math")
-            output.append("\\[\n" + "\n".join(math_lines) + "\n\\]")
+            output.append("{\\fontsize{13.5}{19}\\selectfont\\[\n" + "\n".join(math_lines) + "\n\\]}")
         elif line.startswith("```"):
             flush()
             code = []
@@ -154,11 +160,6 @@ def markdown_to_latex(markdown: str) -> str:
             if level == 1:
                 output.append(r"\DocTitle{" + title + "}")
             else:
-                next_content = next((candidate.strip() for candidate in lines[index + 1:] if candidate.strip()), "")
-                # Detailed S3 and S4/S5 sequences begin on a fresh page so the
-                # required field heading is never stranded above a subheading.
-                if level == 3 and match[2] == "【板書する式】" and next_content.startswith("#### "):
-                    output.append(r"\clearpage")
                 needed_lines = 4 if level == 2 else 3
                 output.append("\\needspace{" + str(needed_lines) + "\\baselineskip}\\" + command + "*{" + title + "}")
         elif line.startswith("- "):
@@ -177,31 +178,36 @@ def markdown_to_latex(markdown: str) -> str:
 
 
 PREAMBLE = r"""\documentclass[a4paper,11pt]{ltjsarticle}
-\usepackage[left=20mm,right=20mm,top=19mm,bottom=20mm]{geometry}
+\usepackage[left=18mm,right=18mm,top=16mm,bottom=16mm]{geometry}
 \usepackage{luatexja-fontspec}
 \setmainjfont{Meiryo}
 \setsansjfont{Meiryo}
 \setmainfont{TeX Gyre Termes}
 \setsansfont{TeX Gyre Heros}
 \usepackage{amsmath,amssymb}
-\usepackage{booktabs,longtable,array,enumitem,needspace,xcolor,url}
+\usepackage{booktabs,longtable,array,enumitem,needspace,xcolor,url,tcolorbox}
 \usepackage[unicode,hidelinks]{hyperref}
-\hypersetup{pdftitle={2026年10月15日 ゼミ発表 スライド1〜10の詳細板書案},pdfauthor={}}
+\hypersetup{pdftitle={2026年10月15日 ゼミ発表用カンニングペーパー},pdfauthor={}}
 \definecolor{HeadingBlue}{HTML}{17365D}
-\newcommand{\DocTitle}[1]{{\color{HeadingBlue}\sffamily\bfseries\fontsize{19}{28}\selectfont #1\par}\vspace{4mm}}
+\newcommand{\DocTitle}[1]{{\color{HeadingBlue}\sffamily\bfseries\fontsize{17}{23}\selectfont #1\par}\vspace{2mm}}
+\newtcolorbox{writebox}{colback=HeadingBlue!3,colframe=HeadingBlue!60,
+  boxrule=.5pt,sharp corners,left=5pt,right=5pt,top=4pt,bottom=4pt,
+  before skip=4pt,after skip=4pt}
 \makeatletter
-\renewcommand{\section}{\@startsection{section}{1}{\z@}{1.8ex plus .5ex minus .2ex}{1.1ex}{\normalfont\Large\sffamily\bfseries\color{HeadingBlue}}}
-\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}{.9ex plus .2ex minus .1ex}{.4ex}{\normalfont\normalsize\sffamily\bfseries\color{HeadingBlue}}}
+\renewcommand{\section}{\@startsection{section}{1}{\z@}{1.1ex plus .3ex minus .1ex}{.6ex}{\normalfont\fontsize{14}{19}\selectfont\sffamily\bfseries\color{HeadingBlue}}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}{.7ex plus .2ex minus .1ex}{.3ex}{\normalfont\fontsize{11.5}{15.2}\selectfont\sffamily\bfseries\color{HeadingBlue}}}
 \renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}{.9ex plus .2ex minus .1ex}{.4ex}{\normalfont\normalsize\bfseries}}
 \makeatother
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{.25em}
+\setlength{\parskip}{1.5pt}
 \setlength{\emergencystretch}{2em}
 \setlength{\LTpre}{.5em}
 \setlength{\LTpost}{.5em}
-\setlist[itemize]{leftmargin=1.5em,itemsep=.2em,topsep=.3em}
+\setlist[itemize]{leftmargin=1.4em,itemsep=3pt,topsep=3pt}
 \renewcommand{\arraystretch}{1.13}
-\linespread{1.04}
+\AtBeginDocument{\fontsize{11.5}{15.2}\selectfont
+  \setlength{\abovedisplayskip}{5pt}\setlength{\belowdisplayskip}{5pt}
+  \setlength{\abovedisplayshortskip}{3pt}\setlength{\belowdisplayshortskip}{3pt}}
 \urlstyle{tt}
 \pagestyle{plain}
 \begin{document}
@@ -213,13 +219,11 @@ def main() -> None:
     if not latex:
         raise SystemExit("LuaLaTeX not found; no installation will be attempted.")
     source_text = SOURCE.read_text(encoding="utf-8")
-    for heading in [
-        "【対応スライド】", "【説明の目的】", "【記号・読み方・意味】",
-        "【板書する式】", "【式変形の理由】", "【口頭での説明】",
-        "【原論文との関係】", "【質問に備える補足】", "【時間配分】",
-    ]:
-        if source_text.count("### " + heading) != 10:
-            raise ValueError(f"Required heading must occur exactly ten times: {heading}")
+    for slide_block in ["1〜6", "7", "8", "9", "10"]:
+        if source_text.count("## 【対応：スライド" + slide_block + "】") != 1:
+            raise ValueError(f"Expected one block for slides {slide_block}")
+    if source_text.count("<!-- write -->") != source_text.count("<!-- /write -->"):
+        raise ValueError("Unbalanced blackboard boxes")
     BUILD.mkdir(parents=True, exist_ok=True)
     tex_path = BUILD / "board_notes_01-10.tex"
     tex_path.write_text(PREAMBLE + markdown_to_latex(source_text) + "\n\\end{document}\n", encoding="utf-8")
@@ -237,8 +241,17 @@ def main() -> None:
     built = BUILD / TARGET.name
     if not built.is_file() or built.stat().st_size < 10000:
         raise SystemExit("Expected a nonempty board-notes PDF.")
+    info = subprocess.check_output(["pdfinfo", "-enc", "UTF-8", str(built)],
+                                   text=True, encoding="utf-8", errors="replace")
+    pages = int(re.search(r"Pages:\s+(\d+)", info).group(1))
+    if not 3 <= pages <= 4:
+        raise SystemExit(f"Expected 3-4 A4 pages, got {pages}; inspect {BUILD}")
+    log_text = tex_path.with_suffix(".log").read_text(encoding="utf-8", errors="replace")
+    if "Missing character:" in log_text or "Overfull \\hbox" in log_text or "Overfull \\vbox" in log_text:
+        raise SystemExit(f"Missing glyph or overflow; inspect {BUILD}")
     shutil.copyfile(built, TARGET)
     print(f"Built: {TARGET.relative_to(HERE)} ({TARGET.stat().st_size:,} bytes)")
+    print(f"A4 pages: {pages}; body: 11.5 pt; display math: 13.5 pt.")
     print("Re-render and visually review every PDF page after content changes.")
 
 
