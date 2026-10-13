@@ -1,0 +1,13 @@
+{
+  "s6": "\\langle P(p,N)\\rangle=N^{-\\beta/\\bar\\nu}F^{(1)}[(p-p_c)N^{1/\\bar\\nu}]\\qquad\\mathrm{(S6)}",
+  "s7": "\\langle S(p,N)\\rangle=N^{\\gamma/\\bar\\nu}F^{(2)}[(p-p_c)N^{1/\\bar\\nu}]\\qquad\\mathrm{(S7)}",
+  "u": "u=(p-p_c)N^{1/\\bar\\nu}",
+  "s8": "p_c(N)=\\underset{p}{\\operatorname{arg\\,max}}\\,\\langle S(p,N)\\rangle\\qquad\\mathrm{(S8)}",
+  "s9": "p_c=p_c(N)+bN^{-1/\\bar\\nu}\\qquad\\mathrm{(S9)}",
+  "s10": "P(p_c)=\\langle P(p=p_c,N)\\rangle\\sim N^{-\\beta/\\bar\\nu}\\qquad\\mathrm{(S10)}",
+  "zero": "p=p_c\\quad\\Longrightarrow\\quad u=0",
+  "s11": "P_c(N)=\\langle P(p=p_c(N),N)\\rangle\\sim N^{-\\beta/\\bar\\nu}\\quad\\mathrm{(S11)}",
+  "s12": "S_c(N)=\\langle S(p=p_c(N),N)\\rangle\\sim N^{\\gamma/\\bar\\nu}\\quad\\mathrm{(S12)}",
+  "slope_shift": "|p_c-p_c(N)|\\sim N^{-1/\\bar\\nu}",
+  "slope_p": "\\log\\langle P(p_c,N)\\rangle=\\mathrm{const}-\\frac{\\beta}{\\bar\\nu}\\log N"
+}
