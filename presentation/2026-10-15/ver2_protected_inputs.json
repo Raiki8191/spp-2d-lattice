@@ -1,0 +1,18 @@
+{
+  "slides/seminar_ver1.pptx": "7f0a4f22037dec4457970fb48d84aa078b202fabcc467a0b828df11eb5f9a2d5",
+  "slides/seminar_ver1.pdf": "1b1f6d3590fec83b8de125eca7c2833c9163a251df334715f8ba6d22cc6788a2",
+  "board/board_notes_ver1.md": "d4c28c663c4fa2beca160468220038820ae9988054b0bcd96243c27beb137a02",
+  "board/board_notes_ver1.pdf": "11e83034e0f44126309a0be3dd0eb5702ecc724699ae9011f5ea3e0d8cdd2a0f",
+  "slides/seminar_with_fss.pptx": "24d2209f6e00504a0c071392331b9efcb8b9f7b316ecf92bf6169562b610fe9c",
+  "slides/seminar_with_fss.pdf": "30839964c7c9d7cc5a5f6559071bf5a7bd4a03376cb820ff2c6843f96d3182a1",
+  "board/board_notes_with_fss.md": "a5ab02fa4ea28bd31fabc307a7f89938f26dc62b9b33bc7f4726b2590a27c4af",
+  "board/board_notes_with_fss.pdf": "5123e2b602971d3f87bb023d53452f250f97cafd78c5a67087ec4d4387c5a2bd",
+  "board/board_notes_01-10.md": "345228c1bf5180189f13973f204997c3ac7dcb472c786eda546bff8315869c7a",
+  "board/board_notes_01-10.pdf": "30fb0e8b8ef72d3c5ae87318a283298323007aa21bd79a0162abd3a820699c3f",
+  "sources_local/papers/spp_main.pdf": "832a33f7605fbb72fac0a5493bcfa5a053e9908afdb856f34c6fc5660003b6bb",
+  "sources_local/papers/spp_supplement.pdf": "d6660c8a293ef8cc8856a6654eafbf8b6166ad00aa8d3edb1330b16d510764d0",
+  "prepare_ver1.py": "bb62e4815591a190770ba5b80626854ef358e275faf8ec78b7a6e29fb2f2863c",
+  "build_powerpoint_ver1.ps1": "a9d92b651b1f98395cf9c3cd7250d33a4232b6d3752a086adc115a910823bce5",
+  "build_board_ver1.py": "0681c1aa8c32a1d48738c946def616e05342bfd57985150ab04f2bebb3ad763b",
+  "prepare_fss.py": "f12278aee732441b5b0e470b3bbc6ef9b85e413986ddfc7290dcbd6703179469"
+}
