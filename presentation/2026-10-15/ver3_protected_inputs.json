@@ -1,0 +1,21 @@
+{
+  "slides/seminar_ver2.pptx": "8b15b637dbedb487b8cab8ebcab84659d135161aea4ca86adf7d605a37240eba",
+  "slides/seminar_ver2.pdf": "a6576569a89df99b8f566a3c74ae5b51972f9388576fca3a2ded6d0b16941bb5",
+  "board/board_notes_ver2.md": "fef73c6ed0167e8d34c1f87f5aa31e58123b7e62ab632d37e31bcd1105e4d1bd",
+  "board/board_notes_ver2.pdf": "c01c7666fcf337a570fc03342d3b46694bbf84dfb9be31c73764703180365c35",
+  "README_ver2.md": "203045ecaf5524f6a30b1835d468583fc3eacda4c7d2053476cd457fb77a297d",
+  "slides/seminar_ver1.pptx": "7f0a4f22037dec4457970fb48d84aa078b202fabcc467a0b828df11eb5f9a2d5",
+  "slides/seminar_ver1.pdf": "1b1f6d3590fec83b8de125eca7c2833c9163a251df334715f8ba6d22cc6788a2",
+  "board/board_notes_ver1.md": "d4c28c663c4fa2beca160468220038820ae9988054b0bcd96243c27beb137a02",
+  "board/board_notes_ver1.pdf": "11e83034e0f44126309a0be3dd0eb5702ecc724699ae9011f5ea3e0d8cdd2a0f",
+  "board/board_notes_01-10.md": "345228c1bf5180189f13973f204997c3ac7dcb472c786eda546bff8315869c7a",
+  "board/board_notes_01-10.pdf": "30fb0e8b8ef72d3c5ae87318a283298323007aa21bd79a0162abd3a820699c3f",
+  "sources_local/papers/spp_main.pdf": "832a33f7605fbb72fac0a5493bcfa5a053e9908afdb856f34c6fc5660003b6bb",
+  "sources_local/papers/spp_supplement.pdf": "d6660c8a293ef8cc8856a6654eafbf8b6166ad00aa8d3edb1330b16d510764d0",
+  "prepare_fss.py": "f12278aee732441b5b0e470b3bbc6ef9b85e413986ddfc7290dcbd6703179469",
+  "prepare_ver2.py": "4003dd4010fe15a2aa6c7f0c5ea6eea19be0c68b53e58d8fa8be2783def58fc0",
+  "build_powerpoint_ver2.ps1": "91c1b9e121b58daa468fddb2b2e48039cf94b4b211caf11442ae5097a4b303ba",
+  "build_board_ver2.py": "0e995b74849f00a326c7f354242e29cb12080a11328cddc1afb7381307f9ff0d",
+  "board/source_check_ver2.md": "da4d39d71457aa780674edc629aa51017110fc793a537210b37583b9b08d9b07",
+  "ver2_protected_inputs.json": "9b276467dc06602652f950c2f1cee368e14a8e08d1581bc223d8a72501fd6ea4"
+}

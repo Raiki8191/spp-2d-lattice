@@ -1,0 +1,190 @@
+{
+  "source_sm_sha256": "d6660c8a293ef8cc8856a6654eafbf8b6166ad00aa8d3edb1330b16d510764d0",
+  "author_public_sm_sha256": "d6660c8a293ef8cc8856a6654eafbf8b6166ad00aa8d3edb1330b16d510764d0",
+  "author_and_local_sm_bytes_equal": true,
+  "render_dpi": 340,
+  "figures": [
+    {
+      "name": "fig_s1_cd",
+      "pdf_page": 3,
+      "box_pdf_points": [
+        102,
+        204,
+        519,
+        356
+      ],
+      "box_pixels": [
+        482,
+        963,
+        2451,
+        1681
+      ],
+      "dimensions": [
+        1969,
+        718
+      ],
+      "sha256": "d53c821c66adc6fa735513bd84a28c21419023a9a234140d33e6a5265cda4859",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 19,
+          "target": "ppt/media/image19.png"
+        }
+      ]
+    },
+    {
+      "name": "fig_s2_a",
+      "pdf_page": 4,
+      "box_pdf_points": [
+        50,
+        188,
+        146,
+        295
+      ],
+      "box_pixels": [
+        236,
+        888,
+        689,
+        1393
+      ],
+      "dimensions": [
+        453,
+        505
+      ],
+      "sha256": "5c1072fb03bd52c0e37d0f84aa7f2983c4661b50a05c12eb1e61c8e2293b527e",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 20,
+          "target": "ppt/media/image20.png"
+        }
+      ]
+    },
+    {
+      "name": "fig_s2_bc",
+      "pdf_page": 4,
+      "box_pdf_points": [
+        146,
+        188,
+        335,
+        295
+      ],
+      "box_pixels": [
+        689,
+        888,
+        1582,
+        1393
+      ],
+      "dimensions": [
+        893,
+        505
+      ],
+      "sha256": "f92a8fe63999d03014fba38bf7d02c1144ca9b04c305bd54c58e0dea318f3531",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 21,
+          "target": "ppt/media/image23.png"
+        }
+      ]
+    },
+    {
+      "name": "fig_s2_de",
+      "pdf_page": 4,
+      "box_pdf_points": [
+        335,
+        188,
+        520,
+        295
+      ],
+      "box_pixels": [
+        1582,
+        888,
+        2456,
+        1393
+      ],
+      "dimensions": [
+        874,
+        505
+      ],
+      "sha256": "cc6f52727faec9d68e403217d37ba933fcb3b30a46dfd0c8ef2d40957595e9cc",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 22,
+          "target": "ppt/media/image24.png"
+        }
+      ]
+    },
+    {
+      "name": "fig_s2_legend",
+      "pdf_page": 4,
+      "box_pdf_points": [
+        522,
+        215,
+        568,
+        256
+      ],
+      "box_pixels": [
+        2465,
+        1015,
+        2682,
+        1209
+      ],
+      "dimensions": [
+        217,
+        194
+      ],
+      "sha256": "d55f218eca5574cac12222910e284fc25dee21e66ce39c9716361de1f55775bc",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 20,
+          "target": "ppt/media/image22.png"
+        },
+        {
+          "slide": 21,
+          "target": "ppt/media/image22.png"
+        },
+        {
+          "slide": 22,
+          "target": "ppt/media/image22.png"
+        }
+      ]
+    },
+    {
+      "name": "table_s2",
+      "pdf_page": 4,
+      "box_pdf_points": [
+        145,
+        407,
+        468,
+        497
+      ],
+      "box_pixels": [
+        685,
+        1922,
+        2210,
+        2347
+      ],
+      "dimensions": [
+        1525,
+        425
+      ],
+      "sha256": "56a473e301d5c34fd33ef7bd7af125a1160f80db304831f7ded7056946de0438",
+      "direct_equals_old_asset_bytes": true,
+      "direct_equals_old_asset_pixels": true,
+      "matching_ver2_embedded_images": [
+        {
+          "slide": 23,
+          "target": "ppt/media/image25.png"
+        }
+      ]
+    }
+  ]
+}
